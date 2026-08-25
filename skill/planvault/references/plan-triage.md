@@ -2,86 +2,100 @@
 
 ## Responsibilities
 
-1. Count total REQ-IDs across the plan
-2. Decide: single file or 3-file split
-3. Detect repetitive review/test patterns across phases
-4. If pattern detected: create `review-audit-template.md` alongside the plan files
-5. Confirm the structure to the user before any execution begins
+1. Count total active REQ-IDs across the plan.
+2. Decide whether the plan remains single-file or uses the 3-core-file split.
+3. Detect repetitive review/test patterns across phases.
+4. If a reusable pattern is detected, create `review-audit-template.md` alongside the plan files.
+5. Leave the plan in an execution-ready structure.
 
-## Decision: single file vs 3-file split
+## Decision: single file vs 3-core-file split
 
-Keep as **single file** if ALL of the following are true:
-- Total REQ-IDs ≤ 25–30
-- Phases are well-isolated with clear boundaries
-- The plan covers a single feature or tightly related changes
-- No phase has more than 8–10 independent REQ-IDs
+Keep the plan as a **single file** when ALL of the following are true:
+- Total active REQ-IDs ≤ 30.
+- Phases are cohesive and have clear boundaries.
+- The plan covers a single feature or a tightly related set of changes.
+- No phase contains more than 10 independent REQ-IDs that cannot be grouped into clear sub-phases.
 
-Split into **3 files** if ANY of the following is true:
-- Total REQ-IDs > 25–30
-- Multiple unrelated features or domains
-- A single phase contains > 8–10 independent REQ-IDs that cannot be sub-phased
-- The plan is expected to span multiple sessions (high context rot risk)
+Split into **3 core files** when ANY of the following is true:
+- Total active REQ-IDs > 30.
+- The plan spans multiple unrelated features or domains.
+- A single phase contains more than 10 independent REQ-IDs that cannot be cleanly separated into sub-phases.
+- The plan is expected to span multiple execution sessions and separating specification, implementation strategy, and task state materially reduces context drift.
 
-### 3-file structure
+The threshold is deterministic. Do not use ranges such as `25–30` as decision boundaries.
 
-```
-spec.md    ← what and why: objective, constraints, out-of-scope, exit criteria
+### 3-core-file structure
+
+```text
+spec.md    ← what and why: objective, constraints, confirmed decisions, out-of-scope, exit criteria
 plan.md    ← how: architecture, phases, dependencies, commit order
-tasks.md   ← REQ-ID checklist only: [ ]/[x] + file:line ref, nothing else
+tasks.md   ← active and historical REQ-ID checklist with status and implementation evidence
 ```
 
-### Sub-phase split (same file, high density)
+These are the **three core plan files**. Optional supporting artifacts such as `review-audit-template.md` may exist alongside them.
 
-If a single phase has > 8–10 REQ-IDs but the plan otherwise qualifies as single-file:
+### Sub-phase split
+
+If a single phase is dense but the plan otherwise qualifies as single-file, split the phase with headings while keeping the canonical numeric REQ-ID grammar unchanged.
 
 ```markdown
 ## Phase 2 — [name]
-### Phase 2a — [sub-objective A]
-- [ ] REQ-2a.1.1 ...
-### Phase 2b — [sub-objective B]
-- [ ] REQ-2b.1.1 ...
+
+### Phase 2A — [sub-objective A]
+- [ ] REQ-2.1.1 ...
+- [ ] REQ-2.1.2 ...
+
+### Phase 2B — [sub-objective B]
+- [ ] REQ-2.2.1 ...
+- [ ] REQ-2.2.2 ...
 ```
 
-## Detecting the review pattern
+Do not introduce alternate identifiers such as `REQ-2a.1.1`.
+
+## Detecting a reusable review pattern
 
 Scan the plan for sections that:
-- Repeat an identical or near-identical review/verification block after each phase
-- Involve launching an independent sub-agent for review
-- Define the same review criteria across multiple phases
+- Repeat identical or near-identical review/verification steps after multiple phases.
+- Use the same independent-review criteria across phases.
+- Repeat the same REQ-ID completion audit.
 
-If this pattern is detected across ≥ 2 phases:
-→ Create `review-audit-template.md` alongside the plan files
-→ In the plan, replace the repetitive review block with: `[review-audit-template]`
-→ Inform the user: *"Repetitive review pattern detected across N phases. Created review-audit-template.md. Each task in plan-execute will decide whether to invoke it based on phase context."*
+If the same pattern appears across at least 2 phases:
+- Create `review-audit-template.md` alongside the plan files.
+- Replace each duplicated review block with an explicit reference such as `[review-audit-template]`.
+- Preserve phase-specific verification inline when it differs materially from the shared template.
 
-If no repetitive pattern: do not create the file.
+If there is no meaningful repetition, do not create the file.
 
-## review-audit-template.md format
+## `review-audit-template.md` format
 
 ```markdown
 # review-audit-template
 
-## Independent review (sub-agent)
-Launch an independent sub-agent with the following checks:
-- Full and correct application of all REQ-IDs in this phase (no silent omissions)
-- No redundant, duplicated or unused code introduced
-- No bugs introduced by the changes
-- No regressions on pre-existing observable behaviour
+## Independent review
+Review the completed phase against the following checks:
+- Every active REQ-ID in the phase was implemented with no silent omission.
+- No redundant, duplicated, or unused code was introduced by the phase.
+- Targeted tests and required verification pass.
+- No confirmed regression in pre-existing observable behaviour was introduced.
 
-Fix all confirmed findings. Re-run targeted specs and repeat review before proceeding.
+Fix confirmed findings and repeat the relevant verification before marking the phase COMPLETE.
 
-## REQ-ID audit (before marking phase COMPLETE)
-For each REQ-ID in this phase:
-`REQ-N.M.n [x] path/to/file.ext:line-range`
+## REQ-ID audit
+For every active REQ-ID in the phase, preserve the requirement text and attach implementation evidence:
 
-If any REQ-ID has no diff reference, the phase cannot be marked COMPLETE.
+- [x] REQ-N.M.n [original requirement text]
+  - Evidence: `path/to/file.ext:line-range`
+
+If any active REQ-ID is incomplete or lacks required evidence, the phase cannot be marked COMPLETE.
 ```
 
 ## Output
 
-After triage, report:
-- Structure decision (single file / 3-file split) and reason
-- Total REQ-ID count
-- Whether review-audit-template.md was created and why
-- Any phases internally sub-split
-- Confirmation: *"Plan is ready for execution with plan-execute."*
+After triage, record or report:
+- Structure decision and reason.
+- Total active REQ-ID count.
+- Whether `review-audit-template.md` was created and why.
+- Any phases split into sub-phases.
+- Whether the plan is ready for execution.
+
+Do not require an extra user confirmation when the structure follows already-confirmed plan decisions and introduces no semantic change. Ask only when triage itself exposes a real structural or requirements conflict.
