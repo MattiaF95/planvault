@@ -2,7 +2,7 @@
 
 ## Responsibilities
 
-1. Validate plan structure before execution.
+1. Validate lifecycle state and plan structure before execution.
 2. Execute the requested phase, task, or full plan from its REQ-IDs.
 3. Preserve requirement text and update completion state with implementation evidence.
 4. Apply shared or phase-specific review checks when required.
@@ -10,15 +10,23 @@
 
 ---
 
-## Step 0 — Structure validation
+## Step 0 — Lifecycle and structure validation
+
+Execution is allowed only when the authoritative lifecycle state is exactly:
+
+```text
+ANALYSIS: COMPLETE
+RETRIAGE: NO
+```
 
 ### Single-file plan
 
 Require:
-- One plan file with `ANALYSIS: COMPLETE`.
+- One plan file containing both lifecycle fields at the top.
+- `ANALYSIS: COMPLETE`.
+- `RETRIAGE: NO`.
 - REQ-IDs with `[ ]` / `[x]` status markers.
 - Clear phase structure.
-- No unresolved `RETRIAGE: REQUIRED` state.
 
 ### 3-core-file plan
 
@@ -30,23 +38,35 @@ plan.md
 tasks.md
 ```
 
+`spec.md` must contain the authoritative lifecycle fields:
+
+```text
+ANALYSIS: COMPLETE
+RETRIAGE: NO
+```
+
+`plan.md` and `tasks.md` must not define conflicting lifecycle values.
 `tasks.md` must contain the REQ-ID checklist and status markers.
 
 Optional support files such as `review-audit-template.md` may exist alongside the three core files.
 
-If the required structure is missing or malformed:
+If lifecycle fields are missing, duplicated inconsistently, or stored in the wrong authoritative location:
+- Stop execution.
+- Route to `plan-triage` for structural normalization.
+
+If `ANALYSIS` is `IN_PROGRESS`:
+- Stop execution.
+- Return to planning/update instead of guessing or reopening decisions during implementation.
+
+If `RETRIAGE: REQUIRED`:
+- Stop execution.
+- Run `plan-triage` before continuing.
+
+If the required structure is otherwise missing or malformed:
 - Stop execution.
 - Report exactly what is missing or inconsistent.
 - Route to `plan-triage` when the problem is structural.
 - Route to `plan-update` when the problem is semantic or caused by a changed requirement.
-
-If `ANALYSIS` is missing or `IN_PROGRESS`:
-- Stop execution.
-- Return to planning/update instead of guessing or reopening decisions during implementation.
-
-If `RETRIAGE: REQUIRED` is present:
-- Stop execution.
-- Run `plan-triage` before continuing.
 
 ---
 
@@ -107,7 +127,12 @@ Rules:
 - When exact line numbers are unstable or unavailable, use the narrowest verifiable file/symbol/diff reference available rather than inventing a line range.
 - Historical or removed REQ-IDs do not block phase completion if the plan clearly marks them inactive/removed.
 
-A phase is COMPLETE only when every active REQ-ID is `[x]`, required verification has passed, and implementation evidence is present.
+A phase is COMPLETE only when every active REQ-ID is `[x]`, required verification has passed, implementation evidence is present, and lifecycle state still remains:
+
+```text
+ANALYSIS: COMPLETE
+RETRIAGE: NO
+```
 
 ---
 
@@ -125,12 +150,17 @@ Do not invoke a shared review template merely because the file exists; the phase
 
 If review discovers a normal implementation defect, fix it within the current phase and re-run the relevant verification.
 
-If review discovers evidence that contradicts the plan itself, stop and return to `plan-update`.
+If review discovers evidence that contradicts the plan itself:
+- Stop execution.
+- Return to `plan-update`.
+- Allow `plan-update` to set `ANALYSIS: IN_PROGRESS` and/or `RETRIAGE: REQUIRED` according to the impact of the finding.
 
 ---
 
 ## What not to do
 
+- Do not execute when `ANALYSIS` is not `COMPLETE`.
+- Do not execute when `RETRIAGE` is not `NO`.
 - Do not reinterpret confirmed plan decisions without contradictory evidence or an explicit user request.
 - Do not avoid reading current code merely because it was cited during planning.
 - Do not mark a phase COMPLETE while any active REQ-ID is incomplete, unverified, or lacks evidence.
@@ -138,3 +168,4 @@ If review discovers evidence that contradicts the plan itself, stop and return t
 - Do not silently implement future-phase requirements.
 - Do not create, modify, or delete `review-audit-template.md` during normal execution; structural ownership belongs to `plan-triage`.
 - Do not redesign the plan structure during execution; route structural changes back to triage/update.
+- Do not set `RETRIAGE: NO`; only `plan-triage` may clear that state.
