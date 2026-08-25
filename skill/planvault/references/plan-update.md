@@ -2,40 +2,61 @@
 
 ## Responsibilities
 
-1. Identify the exact REQ-IDs or sections to change
-2. Detect conflicts between the new instruction and existing plan content
-3. Apply the minimum diff — touch only what is explicitly changing
-4. Preserve all REQ-IDs not involved in the update, including their status markers
-5. Update `ANALYSIS` field if the change affects completeness
+1. Identify the exact REQ-IDs or sections affected by the requested change.
+2. Detect conflicts between the new instruction and existing plan content.
+3. Apply the minimum semantic diff — change only what the request or necessary dependency requires.
+4. Preserve all unaffected REQ-IDs and status markers.
+5. Update the `ANALYSIS` state when the change invalidates or reopens confirmed reasoning.
+6. Flag structural re-triage when the update materially changes plan size, boundaries, or review structure.
 
 ## Conflict detection
 
-Before writing any change, scan for content that contradicts the new instruction:
+Before applying a change, check for content that contradicts the new instruction:
 
-- Same REQ-ID addressed differently in another phase
-- A constraint in "Do not reopen" that blocks the requested change
-- An out-of-scope declaration that the new requirement violates
-- A decision in `plan.md` that conflicts with a change in `tasks.md` (3-file split)
+- The same REQ-ID or confirmed decision is addressed differently elsewhere in the plan.
+- A confirmed constraint blocks the requested change.
+- An out-of-scope declaration excludes the new requirement.
+- `spec.md`, `plan.md`, and `tasks.md` disagree in a 3-core-file plan.
+- The requested update depends on an assumption that conflicts with current authoritative evidence.
 
-If a conflict is found:
-→ **Stop. Do not apply the change.**
-→ Report: *"Conflict detected: [new instruction] contradicts [existing content at X]. Which takes precedence?"*
-→ Wait for explicit user confirmation.
+If a real conflict is found:
 
-Never silently overwrite conflicting content.
+- Stop before applying the conflicting semantic change.
+- Report the specific conflicting items and where they appear.
+- Resolve the conflict from an explicit user instruction or new authoritative evidence.
+- Do not silently choose one side.
 
 ## Update rules
 
-- **Diff-only**: modify only lines/sections explicitly involved in the change
-- **No re-summarising**: do not rewrite narrative sections to "clean them up"
-- **REQ-ID continuity**: if a requirement is removed, mark it `~~REQ-N.M.n~~ [removed]` — never delete the line
-- **New requirements**: assign the next available REQ-ID; do not renumber existing IDs
-- **Status reset**: if a completed `[x]` REQ-ID is materially changed, reset to `[ ]` and note `[reopened]`
-- **ANALYSIS field**: if the update introduces new evidence or invalidates cited evidence, set `ANALYSIS: IN_PROGRESS`
+- **Minimum diff**: modify only affected requirements, decisions, constraints, dependencies, or structure.
+- **No cosmetic rewrite**: do not rewrite unrelated narrative sections merely to improve wording.
+- **REQ-ID continuity**: never renumber existing REQ-IDs.
+- **Removed requirements**: preserve the historical ID and mark the requirement as removed instead of deleting it silently.
+- **New requirements**: assign the next available ID within the relevant phase/section namespace.
+- **Completed requirement changes**: if a completed `[x]` requirement changes materially, reset it to `[ ]` and mark it as reopened while preserving its identity.
+- **Evidence preservation**: when reopening a completed requirement, retain previous evidence as historical evidence if useful, but do not present it as proof of the new requirement state.
+- **ANALYSIS state**: set `ANALYSIS: IN_PROGRESS` when the change reopens a material architectural decision, introduces contradictory evidence, or invalidates a confirmed assumption. Pure execution-detail updates do not automatically reopen analysis.
+
+## Structural re-triage
+
+After applying a non-conflicting update, determine whether plan structure may no longer be appropriate.
+
+Set or report `RETRIAGE: REQUIRED` when any of the following is true:
+
+- Active REQ-ID count crosses the triage threshold.
+- A phase grows beyond the supported density and cannot be cleanly sub-phased in place.
+- The update adds or removes a materially separate feature/domain.
+- The update changes whether repeated review logic should be shared.
+- The update changes dependencies or phase boundaries enough that the current split is no longer coherent.
+
+When `RETRIAGE: REQUIRED` is set, execution must not continue until `plan-triage` has run again.
+
+If none of these conditions applies, do not run triage again unnecessarily.
 
 ## What not to do
 
-- Do not silently resolve conflicts
-- Do not add requirements not explicitly requested
-- Do not restructure sections not involved in the update
-- Do not run triage again — flag to the user if REQ-ID count changed significantly
+- Do not silently resolve conflicts.
+- Do not add unrelated requirements.
+- Do not restructure unaffected sections.
+- Do not renumber REQ-IDs after additions or removals.
+- Do not force a re-triage for small updates that leave the current structure valid.
