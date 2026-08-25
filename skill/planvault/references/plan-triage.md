@@ -6,7 +6,16 @@
 2. Decide whether the plan remains single-file or uses the 3-core-file split.
 3. Detect repetitive review/test patterns across phases.
 4. If a reusable pattern is detected, create `review-audit-template.md` alongside the plan files.
-5. Leave the plan in an execution-ready structure.
+5. Leave the plan in an execution-ready structure and set `RETRIAGE: NO` only after structural validation succeeds.
+
+## Preconditions
+
+Triage runs when:
+- a new draft has `RETRIAGE: REQUIRED`;
+- an update has set `RETRIAGE: REQUIRED`;
+- the current plan structure is missing or malformed.
+
+Do not clear the retriage state while unresolved structural conflicts remain.
 
 ## Decision: single file vs 3-core-file split
 
@@ -27,12 +36,17 @@ The threshold is deterministic. Do not use ranges such as `25–30` as decision 
 ### 3-core-file structure
 
 ```text
-spec.md    ← what and why: objective, constraints, confirmed decisions, out-of-scope, exit criteria
+spec.md    ← what and why: lifecycle state, objective, constraints, confirmed decisions, out-of-scope, exit criteria
 plan.md    ← how: architecture, phases, dependencies, commit order
 tasks.md   ← active and historical REQ-ID checklist with status and implementation evidence
 ```
 
 These are the **three core plan files**. Optional supporting artifacts such as `review-audit-template.md` may exist alongside them.
+
+When converting from a single file to the 3-core-file structure:
+- Move both lifecycle fields to `spec.md`.
+- `spec.md` becomes the only authoritative location for `ANALYSIS` and `RETRIAGE`.
+- Do not duplicate lifecycle fields in `plan.md` or `tasks.md`.
 
 ### Sub-phase split
 
@@ -89,6 +103,21 @@ For every active REQ-ID in the phase, preserve the requirement text and attach i
 If any active REQ-ID is incomplete or lacks required evidence, the phase cannot be marked COMPLETE.
 ```
 
+## Finalise lifecycle state
+
+After structure and review-pattern validation succeed:
+
+- Set `RETRIAGE: NO` in the authoritative lifecycle location.
+- Preserve the current `ANALYSIS` value; triage does not decide semantic completeness.
+- If `ANALYSIS: IN_PROGRESS`, the plan remains non-executable even though structural triage is complete.
+
+Execution is allowed only when both are true:
+
+```text
+ANALYSIS: COMPLETE
+RETRIAGE: NO
+```
+
 ## Output
 
 After triage, record or report:
@@ -96,6 +125,7 @@ After triage, record or report:
 - Total active REQ-ID count.
 - Whether `review-audit-template.md` was created and why.
 - Any phases split into sub-phases.
+- Final `RETRIAGE` state.
 - Whether the plan is ready for execution.
 
 Do not require an extra user confirmation when the structure follows already-confirmed plan decisions and introduces no semantic change. Ask only when triage itself exposes a real structural or requirements conflict.
