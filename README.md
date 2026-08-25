@@ -1,7 +1,10 @@
+<h1 align="center">PLANVAULT for Agent-AI</h1>
+
 <p align="center">
   <img src="planvault-logo.png" alt="planvault logo" />
 </p>
-**planvault** is a provider-neutral Agent Skill for creating, maintaining and executing technical implementation plans without losing requirements, decisions or execution state across long agentic sessions.
+
+<strong>PLANVAULT</strong> is a provider-neutral Agent Skill for creating, maintaining and executing technical implementation plans without losing requirements, decisions or execution state across long agentic sessions.
 
 The problem is not usually the first prompt. It is what happens after 20 or 30 exchanges.
 
