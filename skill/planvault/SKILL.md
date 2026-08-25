@@ -1,34 +1,39 @@
 ---
-name: plan-master
-description: Router skill for structured plan lifecycle management. Detects the current phase (reasoning, drafting, triage, update, execution) and dispatches to the correct reference. Use when discussing, creating, modifying or executing any technical implementation plan. Prevents context drift, silent requirement skipping, and specification loss across long agentic sessions.
-when_to_use: Whenever the user mentions a plan, wants to plan something, needs to update a plan, or wants to execute a plan phase.
+name: planvault
+description: Structured technical plan lifecycle management for long agentic coding sessions. Use when creating, refining, restructuring, updating, or executing an implementation plan. Keeps requirements traceable with stable REQ-IDs, preserves confirmed decisions, detects conflicts, and prevents silent requirement loss across long sessions.
 ---
 
-# plan-master
+# planvault
 
-You are the entry point for the planvault skill. Your only job is to detect the current phase and load the correct reference file from `references/`. Do not execute plan logic yourself.
+You are the entry point for the planvault skill. Detect the current lifecycle state, load the relevant reference file, and follow it. Do not implement plan logic at router level.
 
-## Phase detection
+## Lifecycle routing
 
-```
-1. Does a plan file (or set of plan files) already exist?
-   NO  → Is the user actively reasoning/discussing (no stable decisions yet)?
-         YES → Load: references/plan-draft.md (reasoning mode, incremental checkpoints)
-         NO  → Load: references/plan-draft.md (write first draft immediately)
+1. If no plan exists:
+   - Read `references/plan-draft.md`.
+   - Draft or incrementally build the plan from the current discussion.
 
-   YES → Is the user asking to modify, correct or update the plan?
-         YES → Load: references/plan-update.md
+2. If a plan exists and the user asks to modify, correct, extend, or remove requirements:
+   - Read `references/plan-update.md`.
+   - If that workflow marks the plan as needing structural re-triage, then read `references/plan-triage.md` before execution.
 
-         Is the plan freshly written and not yet triaged?
-         YES → Load: references/plan-triage.md
+3. If a plan exists but has not yet been structurally triaged:
+   - Read `references/plan-triage.md`.
 
-         Is the user asking to implement/execute a phase or task?
-         YES → Load: references/plan-execute.md
-```
+4. If the user asks to implement or execute a phase, task, or full plan:
+   - Read `references/plan-execute.md`.
 
-## Rules
+5. If execution discovers evidence that invalidates a confirmed plan decision:
+   - Stop execution.
+   - Return to `references/plan-update.md` to resolve the conflict and set analysis state appropriately.
+   - Re-run triage only if the update materially changes plan structure.
 
-- Load ONE reference at a time. Never merge logic from multiple references.
-- Do not summarise or interpret the plan. Pass context as-is to the loaded reference.
-- If the phase is ambiguous, ask the user one direct question: "Should I draft, update or execute the plan?"
-- Never start implementing code from this router level.
+## Global rules
+
+- Load only the reference needed for the current lifecycle step. Sequential transitions between references are allowed when the workflow explicitly requires them.
+- Preserve the plan as the source of truth; do not reconstruct requirements from conversation memory when the plan already exists.
+- Never silently remove, renumber, merge, or reinterpret existing REQ-IDs.
+- Do not reopen confirmed architectural decisions without new contradictory evidence or an explicit user request.
+- Reading current source code, tests, diffs, configuration, and other implementation state is always allowed when required to execute or verify a confirmed plan.
+- Do not start implementing code from this router level.
+- Ask a focused question only when a required plan decision cannot be resolved from the existing plan or repository state.
