@@ -7,7 +7,22 @@
 3. Apply the minimum semantic diff — change only what the request or necessary dependency requires.
 4. Preserve all unaffected REQ-IDs and status markers.
 5. Update the `ANALYSIS` state when the change invalidates or reopens confirmed reasoning.
-6. Flag structural re-triage when the update materially changes plan size, boundaries, or review structure.
+6. Set `RETRIAGE` explicitly according to whether the update invalidates current structural validation.
+
+## Lifecycle fields
+
+Every plan must expose:
+
+```text
+ANALYSIS: IN_PROGRESS | COMPLETE
+RETRIAGE: REQUIRED | NO
+```
+
+For a single-file plan, both fields live at the top of the plan file.
+
+For a 3-core-file plan, both fields live only in `spec.md`, which is authoritative for lifecycle state.
+
+`plan-update` may set `RETRIAGE: REQUIRED` when an update invalidates the current structural decision. It must never set `RETRIAGE: NO`; only `plan-triage` may clear the retriage requirement after validating structure.
 
 ## Conflict detection
 
@@ -39,19 +54,61 @@ If a real conflict is found:
 
 ## Structural re-triage
 
-After applying a non-conflicting update, determine whether plan structure may no longer be appropriate.
+After applying a non-conflicting update, determine whether the current structural decision remains valid.
 
-Set or report `RETRIAGE: REQUIRED` when any of the following is true:
+Set `RETRIAGE: REQUIRED` when any of the following is true:
 
 - Active REQ-ID count crosses the triage threshold.
 - A phase grows beyond the supported density and cannot be cleanly sub-phased in place.
 - The update adds or removes a materially separate feature/domain.
 - The update changes whether repeated review logic should be shared.
 - The update changes dependencies or phase boundaries enough that the current split is no longer coherent.
+- A single-file plan may now require the 3-core-file structure, or a 3-core-file plan may now be unnecessarily split.
+- The authoritative lifecycle fields are missing, duplicated, or stored in the wrong file and structural normalization is required.
 
-When `RETRIAGE: REQUIRED` is set, execution must not continue until `plan-triage` has run again.
+If the plan already has `RETRIAGE: REQUIRED`, preserve it until `plan-triage` clears it.
 
-If none of these conditions applies, do not run triage again unnecessarily.
+If none of the structural conditions applies and the current state is already `RETRIAGE: NO`, preserve `RETRIAGE: NO`; do not force triage for a small update.
+
+When `RETRIAGE: REQUIRED` is present, execution must not continue until `plan-triage` has run and set `RETRIAGE: NO`.
+
+## Lifecycle examples
+
+Small implementation-detail update:
+
+```text
+before:
+ANALYSIS: COMPLETE
+RETRIAGE: NO
+
+after:
+ANALYSIS: COMPLETE
+RETRIAGE: NO
+```
+
+Architectural update that also changes plan structure:
+
+```text
+before:
+ANALYSIS: COMPLETE
+RETRIAGE: NO
+
+after:
+ANALYSIS: IN_PROGRESS
+RETRIAGE: REQUIRED
+```
+
+Structure-only change with semantic decisions still valid:
+
+```text
+before:
+ANALYSIS: COMPLETE
+RETRIAGE: NO
+
+after:
+ANALYSIS: COMPLETE
+RETRIAGE: REQUIRED
+```
 
 ## What not to do
 
@@ -60,3 +117,4 @@ If none of these conditions applies, do not run triage again unnecessarily.
 - Do not restructure unaffected sections.
 - Do not renumber REQ-IDs after additions or removals.
 - Do not force a re-triage for small updates that leave the current structure valid.
+- Do not set `RETRIAGE: NO`; structural clearance belongs exclusively to `plan-triage`.
