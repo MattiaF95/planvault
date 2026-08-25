@@ -1,7 +1,0 @@
-interface:
-  display_name: "planvault"
-  short_description: "Structured plan lifecycle — draft, triage, update, execute. Prevents context drift and silent requirement loss across long agentic sessions."
-  brand_color: "#1a1a2e"
-
-policy:
-  allow_implicit_invocation: true
