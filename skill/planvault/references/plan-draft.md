@@ -12,6 +12,7 @@
 ```markdown
 # Plan: [title]
 ANALYSIS: [COMPLETE | IN_PROGRESS]
+RETRIAGE: REQUIRED
 
 ## 1. Objective
 [What and why. Keep it to 3–5 sentences.]
@@ -35,6 +36,19 @@ ANALYSIS: [COMPLETE | IN_PROGRESS]
 - [binary, measurable condition — not "it works"]
 ```
 
+## Lifecycle fields
+
+Every newly drafted plan starts with both lifecycle fields.
+
+- `ANALYSIS: IN_PROGRESS` while material decisions are still open, being investigated, or may change.
+- `ANALYSIS: COMPLETE` when the plan contains enough confirmed information to execute without reopening architectural reasoning.
+- `RETRIAGE: REQUIRED` for every new or materially changed draft until `plan-triage` validates the plan structure.
+- `RETRIAGE: NO` is owned by `plan-triage` and must not be set by `plan-draft`.
+
+For a single-file plan, both fields remain at the top of that file.
+
+If triage later converts the plan to the 3-core-file structure, both fields move to `spec.md` and become authoritative there.
+
 ## REQ-ID rules
 
 - Format: `REQ-{phase}.{section}.{n}`.
@@ -45,8 +59,6 @@ ANALYSIS: [COMPLETE | IN_PROGRESS]
 
 ## ANALYSIS field
 
-- `IN_PROGRESS` while material decisions are still open, being investigated, or may change.
-- `COMPLETE` only when the plan contains enough confirmed information to execute without reopening architectural reasoning.
 - User confirmation may establish `COMPLETE`, but it is not the only valid signal: a plan may also become complete when all material questions are resolved from authoritative evidence and no unresolved decision remains.
 - `ANALYSIS: COMPLETE` freezes confirmed decisions, not the underlying files. Execution may still read current source code, tests, diffs, configuration, and implementation state as required.
 
@@ -56,6 +68,7 @@ ANALYSIS: [COMPLETE | IN_PROGRESS]
 - Prefer writing confirmed or evidence-backed decisions; do not persist speculative branches as if they were settled.
 - During a long reasoning session, update the plan incrementally instead of waiting until the end and reconstructing it from memory.
 - Do not interrupt the user merely because a fixed number of exchanges has passed. Use the actual amount of stable, not-yet-persisted information as the trigger for a checkpoint.
+- Keep `RETRIAGE: REQUIRED` while drafting. Structural validation belongs to `plan-triage`.
 
 ## What not to do
 
@@ -63,3 +76,4 @@ ANALYSIS: [COMPLETE | IN_PROGRESS]
 - Do not add implementation requirements that are not supported by the user's request, confirmed decisions, or necessary dependencies discovered from authoritative evidence.
 - Do not start implementing code.
 - Do not run triage logic — that is `plan-triage`'s responsibility.
+- Do not set `RETRIAGE: NO` from draft.
