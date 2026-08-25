@@ -15,18 +15,42 @@ You are the entry point for the planvault skill. Detect the current lifecycle st
 
 2. If a plan exists and the user asks to modify, correct, extend, or remove requirements:
    - Read `references/plan-update.md`.
-   - If that workflow marks the plan as needing structural re-triage, then read `references/plan-triage.md` before execution.
+   - If the update leaves `RETRIAGE: REQUIRED`, read `references/plan-triage.md` before any execution.
 
-3. If a plan exists but has not yet been structurally triaged:
+3. If a plan exists and `RETRIAGE: REQUIRED`:
+   - Read `references/plan-triage.md`.
+   - Do not execute until triage has completed and changed the state to `RETRIAGE: NO`.
+
+4. If a plan exists but has not yet been structurally triaged:
    - Read `references/plan-triage.md`.
 
-4. If the user asks to implement or execute a phase, task, or full plan:
-   - Read `references/plan-execute.md`.
+5. If the user asks to implement or execute a phase, task, or full plan:
+   - Read `references/plan-execute.md` only when `ANALYSIS: COMPLETE` and `RETRIAGE: NO`.
 
-5. If execution discovers evidence that invalidates a confirmed plan decision:
+6. If execution discovers evidence that invalidates a confirmed plan decision:
    - Stop execution.
-   - Return to `references/plan-update.md` to resolve the conflict and set analysis state appropriately.
-   - Re-run triage only if the update materially changes plan structure.
+   - Return to `references/plan-update.md` to resolve the conflict and set lifecycle state appropriately.
+   - Re-run triage only if the update leaves `RETRIAGE: REQUIRED`.
+
+## Lifecycle state
+
+Every plan must expose both lifecycle fields:
+
+```text
+ANALYSIS: IN_PROGRESS | COMPLETE
+RETRIAGE: REQUIRED | NO
+```
+
+For a single-file plan, both fields live at the top of the plan file.
+
+For a 3-core-file plan, both fields live in `spec.md` and are authoritative for the whole plan. Do not duplicate lifecycle state across `plan.md` or `tasks.md`.
+
+Execution is allowed only when:
+
+```text
+ANALYSIS: COMPLETE
+RETRIAGE: NO
+```
 
 ## Global rules
 
