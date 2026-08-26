@@ -58,6 +58,8 @@ If `ANALYSIS` is `IN_PROGRESS`:
 - Stop execution.
 - Return to planning/update instead of guessing or reopening decisions during implementation.
 
+`ANALYSIS: COMPLETE` does not imply that all REQ-IDs are complete: open REQ-IDs are the work to execute and must remain tracked in `tasks.md` until implementation, verification, review, and evidence are complete.
+
 If `RETRIAGE: REQUIRED`:
 - Stop execution.
 - Run `plan-triage` before continuing.
