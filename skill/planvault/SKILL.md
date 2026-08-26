@@ -45,6 +45,29 @@ For a single-file plan, both fields live at the top of the plan file.
 
 For a 3-core-file plan, both fields live in `spec.md` and are authoritative for the whole plan. Do not duplicate lifecycle state across `plan.md` or `tasks.md`.
 
+## Plan structure
+
+Detect the plan shape before drafting, updating, or executing:
+
+- **Single-file plan:** one self-contained plan file. Keep the lifecycle fields,
+  objective, requirements, phases, and exit criteria in that file. Do not add
+  core-file links or a triage structure merely for consistency.
+- **Three-core-file plan:** use `spec.md`, `plan.md`, and `tasks.md` only when
+  triage requires the split, including when active REQ-IDs exceed the threshold
+  or the plan domains/phases need separate context. `spec.md` is the entrypoint
+  and the only authoritative lifecycle file; `plan.md` describes execution
+  strategy; `tasks.md` tracks REQ-IDs and evidence.
+
+When triage creates or validates the three-core-file structure, add explicit
+relative Markdown links between all three files. At minimum, `spec.md` must
+link to `plan.md` and `tasks.md`; `plan.md` and `tasks.md` must link back to
+`spec.md` and to the complementary core file. A single-file plan does not need
+these links.
+
+If a three-core-file plan is missing a core file or its required links, mark the
+structure incomplete and repair it during triage before execution. Do not infer
+that a standalone file is part of a core plan only from its directory name.
+
 Execution is allowed only when:
 
 ```text
