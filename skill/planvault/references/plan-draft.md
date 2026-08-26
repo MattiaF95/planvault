@@ -4,7 +4,7 @@
 
 1. Parse the user's intent and produce a structured plan file.
 2. During reasoning sessions, persist decisions incrementally as they stabilise.
-3. Enforce atomic REQ-IDs — never bundle multiple independent requirements into one entry.
+3. Group requirements by verifiable outcome — never by file or internal implementation step.
 4. Never pre-empt triage: draft as a single file; triage decides later whether a structural split is needed.
 
 ## Plan file format
@@ -24,9 +24,9 @@ RETRIAGE: REQUIRED
 
 ## 3. Phase N — [name]
 
-### N.M [component or file group]
-- [ ] REQ-N.M.1 [path/to/file.ext]: [single atomic action — one verb, one outcome]
-- [ ] REQ-N.M.2 [path/to/file.ext:line]: [single atomic action]
+### N.M [logical area or capability]
+- [ ] REQ-N.M.1 [short outcome label]: [what must be true after this is done — one verifiable outcome, any number of files]
+- [ ] REQ-N.M.2 [short outcome label]: [what must be true after this is done]
 
 ## Commit order
 1. [commit message for phase 1]
@@ -52,10 +52,66 @@ If triage later converts the plan to the 3-core-file structure, both fields move
 ## REQ-ID rules
 
 - Format: `REQ-{phase}.{section}.{n}`.
-- One bullet = one REQ-ID.
-- A REQ-ID covers one logical change regardless of how many files it touches.
-- Include the primary file path when known; include a line reference only when it is stable and useful.
+- One REQ-ID = one verifiable outcome. It may touch any number of files.
+- A REQ-ID is the right size when it can be verified as a unit: either it works end-to-end or it does not.
+- Do not list file paths in the REQ-ID definition. File paths belong in implementation evidence after execution.
 - Never renumber an existing REQ-ID later to make the list look cleaner.
+- The section heading (`N.M`) describes a logical area or capability, not a file name.
+
+## Sizing a REQ-ID correctly
+
+Ask: *"Can this be verified as a single observable outcome?"*
+
+- YES → it is one REQ-ID regardless of how many files it touches.
+- NO, it contains two independently verifiable outcomes → split into two REQ-IDs.
+- NO, it is one step inside a larger outcome → merge it into the parent REQ-ID.
+
+A phase with 8–10 well-sized REQ-IDs is healthy. If a phase has more than 12, check whether any REQ-IDs are really sub-steps of the same outcome before adding more.
+
+## Anti-patterns
+
+**❌ File-driven splitting** — one REQ-ID per file touched:
+```
+- [ ] REQ-1.1.1 run-block.mjs: supportare più --block
+- [ ] REQ-1.1.2 run-block.mjs: validare scenari contro l'unione dei blocchi
+- [ ] REQ-1.1.3 scenario-catalog.json: dichiarare adapter e gate obbligatori
+- [ ] REQ-1.1.4 validate-scenarios.mjs: validare adapter, target, gate e report
+```
+
+**✅ Behavior-driven grouping** — one REQ-ID per verifiable outcome, any files:
+```
+- [ ] REQ-1.1 Multi-block selection: run-block.mjs accetta più --block, valida
+  scenari contro l'unione dei blocchi e garantisce un risultato esplicito per
+  ogni scenario selezionato; scenario-catalog.json dichiara adapter e gate
+  obbligatori; validate-scenarios.mjs valida adapter, target, gate e report.
+```
+
+**❌ Function-level atomicity** — splitting a single feature by internal step:
+```
+- [ ] REQ-2.1.1 validare input
+- [ ] REQ-2.1.2 normalizzare formato
+- [ ] REQ-2.1.3 scrivere output
+```
+
+**✅ Feature-level atomicity** — one REQ-ID for the whole verifiable behavior:
+```
+- [ ] REQ-2.1 Input pipeline: valida, normalizza e scrive l'output nel formato
+  richiesto; input malformati producono un errore esplicito.
+```
+
+**❌ Splitting implementation from its direct documentation:**
+```
+- [ ] REQ-3.1.1 aggiornare funzione X in run-block.mjs
+- [ ] REQ-3.1.2 aggiornare SKILL.md con la sintassi di X
+```
+
+**✅ Same REQ-ID covers implementation and its direct documentation:**
+```
+- [ ] REQ-3.1 Syntax update: aggiorna funzione X e documenta la sintassi
+  reale in SKILL.md.
+```
+
+**Smell test:** se due REQ-ID adiacenti diventano sempre `[x]` insieme e nessuno dei due ha senso verificato da solo, sono lo stesso REQ-ID scritto su due righe.
 
 ## ANALYSIS field
 
@@ -72,8 +128,9 @@ If triage later converts the plan to the 3-core-file structure, both fields move
 
 ## What not to do
 
-- Do not summarise multiple requirements into one REQ-ID to reduce length.
-- Do not add implementation requirements that are not supported by the user's request, confirmed decisions, or necessary dependencies discovered from authoritative evidence.
+- Do not create one REQ-ID per file touched — group by verifiable outcome.
+- Do not use file names as section headings — use logical areas or capabilities.
+- Do not add implementation requirements not supported by the user's request, confirmed decisions, or necessary dependencies from authoritative evidence.
 - Do not start implementing code.
 - Do not run triage logic — that is `plan-triage`'s responsibility.
 - Do not set `RETRIAGE: NO` from draft.

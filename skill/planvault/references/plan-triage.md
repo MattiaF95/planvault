@@ -2,11 +2,12 @@
 
 ## Responsibilities
 
-1. Count total active REQ-IDs across the plan.
-2. Decide whether the plan remains single-file or uses the 3-core-file split.
-3. Detect repetitive review/test patterns across phases.
-4. If a reusable pattern is detected, create `review-audit-template.md` alongside the plan files.
-5. Leave the plan in an execution-ready structure and set `RETRIAGE: NO` only after structural validation succeeds.
+1. Consolidate over-granular REQ-IDs before counting or splitting.
+2. Count total active REQ-IDs after consolidation.
+3. Decide whether the plan remains single-file or uses the 3-core-file split.
+4. Detect repetitive review/test patterns across phases.
+5. If a reusable pattern is detected, create `review-audit-template.md` alongside the plan files.
+6. Leave the plan in an execution-ready structure and set `RETRIAGE: NO` only after structural validation succeeds.
 
 ## Preconditions
 
@@ -17,21 +18,37 @@ Triage runs when:
 
 Do not clear the retriage state while unresolved structural conflicts remain.
 
+## Step 0 — REQ-ID consolidation (always first)
+
+Before deciding single-file vs split, scan each phase for over-granular REQ-IDs and consolidate them.
+
+Merge two or more REQ-IDs into one when ALL of the following are true:
+- They would always be implemented together in a single session.
+- Neither can be meaningfully verified in isolation.
+- They belong to the same observable outcome or the same logical capability.
+- Separating them adds no planning or review value.
+
+After merging, renumber the consolidated REQ-IDs within their section to keep the namespace clean. This is the only time renumbering is permitted.
+
+Report consolidated REQ-IDs to the user: *"Consolidated N micro-tasks into M REQ-IDs in phase X (all described the same outcome: [label])."*
+
+Do not merge REQ-IDs that are genuinely independent even if they touch the same file.
+
 ## Decision: single file vs 3-core-file split
 
 Keep the plan as a **single file** when ALL of the following are true:
-- Total active REQ-IDs ≤ 30.
-- Phases are cohesive and have clear boundaries.
 - The plan covers a single feature or a tightly related set of changes.
-- No phase contains more than 10 independent REQ-IDs that cannot be grouped into clear sub-phases.
+- Phases are cohesive with clear boundaries.
+- No phase contains more than 10 REQ-IDs after consolidation that cannot be grouped into clear sub-phases.
+- Separating spec, plan, and tasks would not materially reduce context drift.
 
 Split into **3 core files** when ANY of the following is true:
-- Total active REQ-IDs > 30.
 - The plan spans multiple unrelated features or domains.
-- A single phase contains more than 10 independent REQ-IDs that cannot be cleanly separated into sub-phases.
+- A single phase contains more than 10 independent REQ-IDs after consolidation that cannot be cleanly separated into sub-phases.
 - The plan is expected to span multiple execution sessions and separating specification, implementation strategy, and task state materially reduces context drift.
+- The total REQ-ID count after consolidation makes a single file unwieldy for execution navigation.
 
-The threshold is deterministic. Do not use ranges such as `25–30` as decision boundaries.
+Do not use raw REQ-ID count as the sole split criterion. A plan with 35 well-scoped REQ-IDs across 4 cohesive phases may remain single-file. A plan with 20 micro-granular REQ-IDs across 2 unrelated domains may need a split.
 
 ### 3-core-file structure
 
@@ -53,7 +70,7 @@ When converting from a single file to the 3-core-file structure:
 
 ### Sub-phase split
 
-If a single phase is dense but the plan otherwise qualifies as single-file, split the phase with headings while keeping the canonical numeric REQ-ID grammar unchanged.
+If a single phase is dense but the plan otherwise qualifies as single-file, first consolidate REQ-IDs (Step 0), then split the phase with headings if density remains high.
 
 ```markdown
 ## Phase 2 — [name]
@@ -108,7 +125,7 @@ If any active REQ-ID is incomplete or lacks required evidence, the phase cannot 
 
 ## Finalise lifecycle state
 
-After structure and review-pattern validation succeed:
+After consolidation, structure, and review-pattern validation succeed:
 
 - Set `RETRIAGE: NO` in the authoritative lifecycle location.
 - Preserve the current `ANALYSIS` value; triage does not decide semantic completeness.
@@ -124,8 +141,9 @@ RETRIAGE: NO
 ## Output
 
 After triage, record or report:
+- Consolidation result: how many REQ-IDs were merged and why.
 - Structure decision and reason.
-- Total active REQ-ID count.
+- Total active REQ-ID count after consolidation.
 - Whether `review-audit-template.md` was created and why.
 - Any phases split into sub-phases.
 - Final `RETRIAGE` state.

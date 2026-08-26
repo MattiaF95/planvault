@@ -45,12 +45,23 @@ If a real conflict is found:
 
 - **Minimum diff**: modify only affected requirements, decisions, constraints, dependencies, or structure.
 - **No cosmetic rewrite**: do not rewrite unrelated narrative sections merely to improve wording.
-- **REQ-ID continuity**: never renumber existing REQ-IDs.
+- **REQ-ID continuity**: never renumber existing REQ-IDs (except when plan-triage consolidates during retriage).
 - **Removed requirements**: preserve the historical ID and mark the requirement as removed instead of deleting it silently.
 - **New requirements**: assign the next available ID within the relevant phase/section namespace.
 - **Completed requirement changes**: if a completed `[x]` requirement changes materially, reset it to `[ ]` and mark it as reopened while preserving its identity.
 - **Evidence preservation**: when reopening a completed requirement, retain previous evidence as historical evidence if useful, but do not present it as proof of the new requirement state.
 - **ANALYSIS state**: set `ANALYSIS: IN_PROGRESS` when the change reopens a material architectural decision, introduces contradictory evidence, or invalidates a confirmed assumption. Pure execution-detail updates do not automatically reopen analysis.
+
+## Dependencies discovered during execution
+
+When `plan-execute` reports a necessary dependency it handled inline, do not create a new REQ-ID for it. Record it in the affected REQ-ID's evidence. A necessary dependency is one required for the existing outcome to be correct — it does not expand scope.
+
+Create a new REQ-ID only when ALL of the following are true:
+- The dependency introduces a verifiable outcome not previously in the plan.
+- The user explicitly confirms it is in scope.
+- It is genuinely independent and could be verified separately.
+
+If a dependency would require `RETRIAGE: REQUIRED`, set it and let `plan-triage` decide whether consolidation or a structural change is needed before execution continues.
 
 ## Structural re-triage
 
@@ -58,8 +69,7 @@ After applying a non-conflicting update, determine whether the current structura
 
 Set `RETRIAGE: REQUIRED` when any of the following is true:
 
-- Active REQ-ID count crosses the triage threshold.
-- A phase grows beyond the supported density and cannot be cleanly sub-phased in place.
+- A phase grows beyond supported density after adding new REQ-IDs and cannot be cleanly sub-phased in place.
 - The update adds or removes a materially separate feature/domain.
 - The update changes whether repeated review logic should be shared.
 - The update changes dependencies or phase boundaries enough that the current split is no longer coherent.
@@ -115,6 +125,7 @@ RETRIAGE: REQUIRED
 - Do not silently resolve conflicts.
 - Do not add unrelated requirements.
 - Do not restructure unaffected sections.
-- Do not renumber REQ-IDs after additions or removals.
+- Do not renumber REQ-IDs after additions or removals (renumbering is only permitted during plan-triage consolidation).
 - Do not force a re-triage for small updates that leave the current structure valid.
 - Do not set `RETRIAGE: NO`; structural clearance belongs exclusively to `plan-triage`.
+- Do not create new REQ-IDs for necessary dependencies discovered during execution; record them in evidence and route to plan-triage only if scope genuinely expands.

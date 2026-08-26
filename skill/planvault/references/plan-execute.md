@@ -89,16 +89,26 @@ During execution:
 - Execute one phase at a time unless the user explicitly requests multiple phases or the full plan.
 - Work through active REQ-IDs in plan order unless a documented dependency requires a different order.
 - Implement one REQ-ID fully before marking it complete.
-- A REQ-ID may touch multiple files when required by the logical change; referenced paths are scope guidance, not an absolute prohibition on necessary dependencies.
+- A REQ-ID covers one verifiable outcome and may touch any number of files. Implement all necessary files together as a single unit.
 - If a requirement is materially ambiguous and cannot be resolved from the plan or current repository state, ask one focused question rather than guessing.
 
 ### Implementation rules
 
-- Implement the requirement as written, including necessary dependencies that are required for correctness.
-- Do not add unrelated improvements.
+- Implement the requirement as written, including all files necessary to achieve the stated outcome.
+- Necessary dependencies are part of the REQ-ID — they do not require a new REQ-ID. Record them in the implementation evidence.
+- Do not add unrelated improvements or changes not required by the current REQ-ID.
 - Do not silently implement requirements from future phases.
-- When an unavoidable dependency causes a file outside the stated path to change, record that dependency in the implementation evidence or execution notes.
 - Preserve pre-existing observable behaviour unless the plan explicitly changes it.
+
+### Necessary dependency vs. unrelated improvement
+
+| | Necessary dependency | Unrelated improvement |
+|---|---|---|
+| **Required for correctness?** | Yes — the REQ-ID outcome is wrong or incomplete without it | No — the REQ-ID works correctly without it |
+| **Action** | Implement inline; record in evidence | Do not implement; flag to user if genuinely useful |
+| **Creates new REQ-ID?** | Never | Only if user explicitly adds it to the plan |
+
+Examples of necessary dependencies: a validation function needed by the feature being implemented; a config key required to enable the new behaviour; a type definition consumed by changed code. These are part of the REQ-ID, not additions to the plan.
 
 ---
 
@@ -109,27 +119,27 @@ Never replace the original requirement description with only a path or line refe
 Preserve the requirement and append evidence:
 
 ```markdown
-- [x] REQ-N.M.n `path/to/file.ext`: [original requirement text]
-  - Evidence: `path/to/file.ext:line-range`
+- [x] REQ-N.M.n [original requirement text]
+  - Evidence: `path/to/primary.ext:line-range`
 ```
 
 If multiple files materially implement the REQ-ID:
 
 ```markdown
-- [x] REQ-N.M.n `path/to/primary.ext`: [original requirement text]
+- [x] REQ-N.M.n [original requirement text]
   - Evidence:
     - `path/to/primary.ext:line-range`
-    - `path/to/dependency.ext:line-range`
+    - `path/to/secondary.ext:line-range`
 ```
 
 Rules:
 - Mark `[x]` only after implementation and required verification succeed.
 - Keep REQ-ID and requirement wording stable.
-- Evidence should point to the resulting implementation when stable line references are available.
-- When exact line numbers are unstable or unavailable, use the narrowest verifiable file/symbol/diff reference available rather than inventing a line range.
+- Record the files that materially implement the outcome. Do not enumerate every file touched by a minor dependency — use the narrowest verifiable reference that confirms the outcome.
+- When exact line numbers are unstable or unavailable, use the narrowest verifiable file/symbol/diff reference rather than inventing a line range.
 - Historical or removed REQ-IDs do not block phase completion if the plan clearly marks them inactive/removed.
 
-A phase is COMPLETE only when every active REQ-ID is `[x]`, required verification has passed, implementation evidence is present, and lifecycle state still remains:
+A phase is COMPLETE only when every active REQ-ID is `[x]`, the stated outcome is verifiable, and lifecycle state still reads:
 
 ```text
 ANALYSIS: COMPLETE
@@ -165,9 +175,10 @@ If review discovers evidence that contradicts the plan itself:
 - Do not execute when `RETRIAGE` is not `NO`.
 - Do not reinterpret confirmed plan decisions without contradictory evidence or an explicit user request.
 - Do not avoid reading current code merely because it was cited during planning.
-- Do not mark a phase COMPLETE while any active REQ-ID is incomplete, unverified, or lacks evidence.
+- Do not mark a phase COMPLETE while any active REQ-ID is incomplete, unverified, or its outcome is not confirmed.
 - Do not erase the original REQ-ID description when recording completion evidence.
 - Do not silently implement future-phase requirements.
+- Do not create new REQ-IDs for necessary dependencies discovered during execution — record them in evidence.
 - Do not create, modify, or delete `review-audit-template.md` during normal execution; structural ownership belongs to `plan-triage`.
 - Do not redesign the plan structure during execution; route structural changes back to triage/update.
 - Do not set `RETRIAGE: NO`; only `plan-triage` may clear that state.
