@@ -41,6 +41,11 @@ ANALYSIS: IN_PROGRESS | COMPLETE
 RETRIAGE: REQUIRED | NO
 ```
 
+`ANALYSIS` describes the state of plan reasoning, not implementation progress:
+- `ANALYSIS: IN_PROGRESS` means material requirements, assumptions, or architectural decisions are still unresolved or may change.
+- `ANALYSIS: COMPLETE` means the plan contains enough confirmed information to execute without reopening that reasoning; REQ-IDs may still be open and are tracked independently in `tasks.md`.
+Reopen `ANALYSIS` only when new evidence or a requested change invalidates a confirmed decision. Do not set it back to `IN_PROGRESS` merely because implementation tasks remain incomplete.
+
 For a single-file plan, both fields live at the top of the plan file.
 
 For a 3-core-file plan, both fields live in `spec.md` and are authoritative for the whole plan. Do not duplicate lifecycle state across `plan.md` or `tasks.md`.
