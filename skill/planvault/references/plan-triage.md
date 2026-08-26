@@ -47,6 +47,9 @@ When converting from a single file to the 3-core-file structure:
 - Move both lifecycle fields to `spec.md`.
 - `spec.md` becomes the only authoritative location for `ANALYSIS` and `RETRIAGE`.
 - Do not duplicate lifecycle fields in `plan.md` or `tasks.md`.
+- Add explicit relative Markdown links between `spec.md`, `plan.md`, and `tasks.md`.
+- Make `spec.md` the navigational entrypoint; `plan.md` and `tasks.md` must link back to it and to the complementary core file.
+- Do not add these links to a single-file plan.
 
 ### Sub-phase split
 
