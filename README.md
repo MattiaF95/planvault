@@ -369,10 +369,10 @@ Invoke:
 $skill-installer
 ```
 
-and provide this repository plus the skill path:
+and provide this url path:
 
 ```text
-skill/planvault
+https://github.com/MattiaF95/planvault/tree/main/skill/planvault
 ```
 
 For reusable public distribution, OpenAI recommends packaging skills as a plugin rather than relying only on manual local installation.
