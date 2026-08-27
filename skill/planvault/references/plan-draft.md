@@ -14,6 +14,17 @@
 ANALYSIS: [COMPLETE | IN_PROGRESS]
 RETRIAGE: REQUIRED
 
+## Agent execution header
+- `PLAN_STATUS: OPEN`
+- `EXECUTION_READINESS: NOT_READY`
+- `EXECUTION_SCOPE: FULL_PLAN`
+- `CURRENT_REQ: none`
+- `NEXT_ACTION: complete triage, then execute the first open REQ-ID`
+- `COMPLETION_ALLOWED: NO`
+
+Use these exact field names and values. Do not replace the header with a custom
+prose status.
+
 ## 1. Objective
 [What and why. Keep it to 3–5 sentences.]
 
@@ -34,6 +45,21 @@ RETRIAGE: REQUIRED
 
 ## Exit criteria
 - [binary, measurable condition — not "it works"]
+
+## Execution instructions
+- The plan is the operational prompt and source of truth during execution.
+- When an execution intent is received, execute the requested scope; if no
+  narrower scope is stated, execute all remaining active REQ-IDs.
+- Start with the first active incomplete REQ-ID in plan order after lifecycle
+  and structure validation succeed.
+- Do not stop after analysis, inventory, preflight, or validation when execution
+  prerequisites pass.
+- Do not skip an active REQ-ID or mark it complete without implementation,
+  required verification, review, and evidence.
+- If work is blocked, record the blocker, evidence, required resolution, and
+  resume action. The REQ-ID, phase, and plan remain incomplete.
+- The plan can be complete only when every active REQ-ID and every exit
+  criterion is complete and evidenced.
 ```
 
 ## Lifecycle fields

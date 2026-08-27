@@ -7,6 +7,16 @@ description: Structured technical plan lifecycle management for long agentic cod
 
 You are the entry point for the planvault skill. Detect the current lifecycle state, load the relevant reference file, and follow it. Do not implement plan logic at router level.
 
+## Execution intent
+
+Treat any user instruction that clearly asks to execute, implement, apply, carry out, complete, run, or otherwise perform the work described by an existing plan as an execution request. The exact wording does not matter.
+
+When such an instruction is received:
+- treat the plan as the operational prompt and source of truth;
+- determine the requested scope from the instruction, using the full plan when no narrower scope is stated;
+- follow `references/plan-execute.md` and begin the execution loop after validation succeeds;
+- do not answer with validation or analysis only when execution is allowed.
+
 ## Lifecycle routing
 
 1. If no plan exists:
@@ -50,6 +60,22 @@ For a single-file plan, both fields live at the top of the plan file.
 
 For a 3-core-file plan, both fields live in `spec.md` and are authoritative for the whole plan. Do not duplicate lifecycle state across `plan.md` or `tasks.md`.
 
+Every plan must also contain one standard execution header in the authoritative
+plan file:
+
+```text
+PLAN_STATUS: OPEN | IN_PROGRESS | BLOCKED | COMPLETE
+EXECUTION_READINESS: NOT_READY | READY | BLOCKED
+EXECUTION_SCOPE: REQ_ID | PHASE | FULL_PLAN
+CURRENT_REQ: REQ-ID or none
+NEXT_ACTION: concrete next action
+COMPLETION_ALLOWED: NO | YES
+```
+
+Do not replace these fields with custom names or a prose-only status. For a
+single-file plan the header is in that file. For a 3-core-file plan it is in
+`spec.md`.
+
 ## Plan structure
 
 Detect the plan shape before drafting, updating, or executing:
@@ -80,6 +106,8 @@ ANALYSIS: COMPLETE
 RETRIAGE: NO
 ```
 
+These fields authorize execution of the plan's open work. They do not mean that the plan or its REQ-IDs are complete.
+
 ## Global rules
 
 - Load only the reference needed for the current lifecycle step. Sequential transitions between references are allowed when the workflow explicitly requires them.
@@ -87,5 +115,7 @@ RETRIAGE: NO
 - Never silently remove, renumber, merge, or reinterpret existing REQ-IDs.
 - Do not reopen confirmed architectural decisions without new contradictory evidence or an explicit user request.
 - Reading current source code, tests, diffs, configuration, and other implementation state is always allowed when required to execute or verify a confirmed plan.
+- If the standard execution header is missing or malformed, do not execute;
+  route the plan to `plan-update` or `plan-triage` for repair.
 - Do not start implementing code from this router level.
 - Ask a focused question only when a required plan decision cannot be resolved from the existing plan or repository state.

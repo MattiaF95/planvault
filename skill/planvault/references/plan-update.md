@@ -8,6 +8,8 @@
 4. Preserve all unaffected REQ-IDs and status markers.
 5. Update the `ANALYSIS` state when the change invalidates or reopens confirmed reasoning.
 6. Set `RETRIAGE` explicitly according to whether the update invalidates current structural validation.
+7. Preserve and update the standard agent execution header so that all six
+   required fields describe the new plan.
 
 ## Lifecycle fields
 
@@ -50,6 +52,10 @@ If a real conflict is found:
 - **New requirements**: assign the next available ID within the relevant phase/section namespace.
 - **Completed requirement changes**: if a completed `[x]` requirement changes materially, reset it to `[ ]` and mark it as reopened while preserving its identity.
 - **Evidence preservation**: when reopening a completed requirement, retain previous evidence as historical evidence if useful, but do not present it as proof of the new requirement state.
+- **Execution header**: after any update, keep the standard six-field header.
+  Keep `PLAN_STATUS: OPEN` or
+  `BLOCKED` while active work remains; reset `COMPLETION_ALLOWED: NO` whenever
+  a completed requirement is reopened or a new active requirement is added.
 - **ANALYSIS state**: set `ANALYSIS: IN_PROGRESS` when the change reopens a material architectural decision, introduces contradictory evidence, or invalidates a confirmed assumption. Pure execution-detail updates do not automatically reopen analysis.
 
 ## Dependencies discovered during execution

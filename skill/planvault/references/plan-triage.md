@@ -130,6 +130,12 @@ After consolidation, structure, and review-pattern validation succeed:
 - Set `RETRIAGE: NO` in the authoritative lifecycle location.
 - Preserve the current `ANALYSIS` value; triage does not decide semantic completeness.
 - If `ANALYSIS: IN_PROGRESS`, the plan remains non-executable even though structural triage is complete.
+- Set `EXECUTION_READINESS: READY` only when lifecycle and required plan
+  structure are valid. Keep `PLAN_STATUS: OPEN` and `COMPLETION_ALLOWED: NO`
+  while any active REQ-ID or exit criterion remains incomplete.
+- Validate that the authoritative plan file contains all six standard execution
+  header fields. Repair missing or custom fields before setting
+  `EXECUTION_READINESS: READY`.
 
 Execution is allowed only when both are true:
 
