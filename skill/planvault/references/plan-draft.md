@@ -33,6 +33,16 @@ prose status.
 - Confirmed decisions: [decisions that should not be reopened without new evidence]
 - Out of scope: [explicitly excluded from this plan]
 
+The plan must contain enough repository orientation for an agent without
+session memory to locate the relevant functionality. Keep one authoritative
+context location. In a 3-core-file plan, link to that location instead of
+duplicating the same context across core files.
+
+Distinguish repository orientation from execution strategy: explain where the
+relevant functionality lives, then explain the ordered changes needed to
+achieve the objective. Commands, expected observations, and acceptance proofs
+belong in the execution and validation sections.
+
 ## 3. Phase N — [name]
 
 ### N.M [logical area or capability]
@@ -40,11 +50,16 @@ prose status.
 - [ ] REQ-N.M.2 [short outcome label]: [what must be true after this is done]
 
 ## Commit order
-1. [commit message for phase 1]
-2. [commit message for phase 2]
+1. [phase-level commit message for phase 1]
+2. [phase-level commit message for phase 2]
+
+Each phase must define one atomic commit outcome. The commit is created only
+after all REQ-IDs, verification, review, and evidence for that phase are
+complete.
 
 ## Exit criteria
 - [binary, measurable condition — not "it works"]
+- [observable proof that the overall objective was achieved]
 
 ## Execution instructions
 - The plan is the operational prompt and source of truth during execution.
@@ -60,6 +75,11 @@ prose status.
   resume action. The REQ-ID, phase, and plan remain incomplete.
 - The plan can be complete only when every active REQ-ID and every exit
   criterion is complete and evidenced.
+- Every phase must define an observable result that advances the objective and
+  a verification that demonstrates that result. Final validation must also
+  demonstrate the overall objective, not merely completed REQ-IDs.
+- For risky commands, migrations, or operations that may fail partially,
+  document a safe retry or recovery action.
 ```
 
 ## Lifecycle fields
@@ -92,7 +112,9 @@ Ask: *"Can this be verified as a single observable outcome?"*
 - NO, it contains two independently verifiable outcomes → split into two REQ-IDs.
 - NO, it is one step inside a larger outcome → merge it into the parent REQ-ID.
 
-A phase with 8–10 well-sized REQ-IDs is healthy. If a phase has more than 12, check whether any REQ-IDs are really sub-steps of the same outcome before adding more.
+A phase with 8–10 well-sized REQ-IDs is healthy. If a phase has more than 10,
+review whether REQ-IDs are really sub-steps of the same outcome before adding
+more; triage may split the phase when independent density remains high.
 
 ## Anti-patterns
 

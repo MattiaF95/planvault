@@ -99,8 +99,9 @@ If the required structure is otherwise missing or malformed:
 
 After lifecycle and structure validation succeed:
 
-1. Read the plan and the complete standard execution header once for the current
-   execution session.
+1. Read the authoritative plan and complete standard execution header once for
+   the current execution session. For a 3-core-file plan, read `spec.md`,
+   `plan.md`, and `tasks.md` together.
 2. Resolve the requested scope and create an in-memory ordered execution
    cursor containing the active incomplete REQ-IDs in that scope.
 3. Set the plan status to `IN_PROGRESS`, set `CURRENT_REQ` to the first open
@@ -110,13 +111,17 @@ After lifecycle and structure validation succeed:
 5. At the REQ-ID checkpoint, append implementation and verification evidence,
    update the status, `CURRENT_REQ`, and `NEXT_ACTION`, then advance the cursor.
 6. Continue with the next cursor item without rereading the entire plan.
-7. Audit all REQ-IDs and exit criteria in the requested scope once, at the end
+7. At each phase boundary, re-read the authoritative plan context before
+   starting the next phase.
+8. Audit all REQ-IDs and exit criteria in the requested scope once, at the end
    of the execution session.
 
 The execution cursor is authoritative during the current session. Do not
 repeatedly reload or rewrite the full plan between REQ-IDs. Re-read the plan
 only when execution resumes in a new session, the user changes the scope, a
-plan update is applied, or a blocker/conflict changes the execution path.
+plan update is applied, a blocker/conflict changes the execution path, a phase
+boundary is reached, or context is compacted. For a 3-core-file plan, the
+authoritative context is `spec.md`, `plan.md`, and `tasks.md` read together.
 
 Do not execute the same REQ-ID more than once in the same session unless its
 verification failed and a concrete fix was applied, or the user explicitly
@@ -131,6 +136,10 @@ the first open REQ-ID immediately.
 If one REQ-ID is blocked, record the blocker and continue with independent
 REQ-IDs when this is safe. If no safe work remains, set the plan status to
 `BLOCKED` and preserve the exact resume action.
+
+When a command, migration, or other operation can fail partially, follow the
+plan's safe retry or recovery action. If the plan does not provide one and the
+operation is risky, stop before proceeding destructively and report the gap.
 
 ### Trust boundary
 
@@ -223,6 +232,9 @@ every exit criterion is checked with evidence, no blocker or pending review
 remains, and the execution header says `PLAN_STATUS: COMPLETE` and
 `COMPLETION_ALLOWED: YES`.
 
+The final audit must also demonstrate the overall objective through an
+observable result or an equivalent project-specific proof.
+
 ---
 
 ## Step 3 — Review
@@ -234,6 +246,12 @@ After all active REQ-IDs in a phase are implemented:
 3. If the reference is present, require `review-audit-template.md` alongside the plan and apply it.
 4. Apply phase-specific criteria in addition to the shared template when both are present and non-duplicative.
 5. If neither exists, perform only the verification required by the individual REQ-IDs and exit criteria.
+
+After the phase review and evidence update succeed, create one atomic,
+phase-level Git commit when the repository uses Git. Do not advance to the
+next phase until the commit succeeds. If committing is blocked, preserve the
+implementation, report the exact blocker and resume action, and do not claim
+final delivery.
 
 Do not invoke a shared review template merely because the file exists; the phase must reference it.
 

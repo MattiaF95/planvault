@@ -68,6 +68,11 @@ When converting from a single file to the 3-core-file structure:
 - Make `spec.md` the navigational entrypoint; `plan.md` and `tasks.md` must link back to it and to the complementary core file.
 - Do not add these links to a single-file plan.
 
+For a 3-core-file plan, `spec.md` must also maintain the living-document
+sections `Decision Log`, `Surprises & Discoveries`, and `Outcomes &
+Retrospective`. These sections are not required for a single-file plan unless
+the plan itself chooses to include them.
+
 ### Sub-phase split
 
 If a single phase is dense but the plan otherwise qualifies as single-file, first consolidate REQ-IDs (Step 0), then split the phase with headings if density remains high.

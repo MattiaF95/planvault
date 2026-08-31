@@ -56,6 +56,8 @@ If a real conflict is found:
   Keep `PLAN_STATUS: OPEN` or
   `BLOCKED` while active work remains; reset `COMPLETION_ALLOWED: NO` whenever
   a completed requirement is reopened or a new active requirement is added.
+- **Phase commits**: when phases or their scope change, update the phase-level
+  commit order so each phase still has one commit outcome after verification.
 - **ANALYSIS state**: set `ANALYSIS: IN_PROGRESS` when the change reopens a material architectural decision, introduces contradictory evidence, or invalidates a confirmed assumption. Pure execution-detail updates do not automatically reopen analysis.
 
 ## Dependencies discovered during execution
