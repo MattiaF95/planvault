@@ -2,8 +2,8 @@
 
 ## Responsibilities
 
-1. Parse the user's intent and produce a structured plan file.
-2. During reasoning sessions, persist decisions incrementally as they stabilise.
+1. Draft only after the `planvault` authorization gate confirms an explicit request to create a plan.
+2. Within the authorized scope, persist decisions incrementally as they stabilise.
 3. Group requirements by verifiable outcome — never by file or internal implementation step.
 4. Never pre-empt triage: draft as a single file; triage decides later whether a structural split is needed.
 
@@ -100,7 +100,7 @@ If triage later converts the plan to the 3-core-file structure, both fields move
 - Format: `REQ-{phase}.{section}.{n}`.
 - One REQ-ID = one verifiable outcome. It may touch any number of files.
 - A REQ-ID is the right size when it can be verified as a unit: either it works end-to-end or it does not.
-- Do not list file paths in the REQ-ID definition. File paths belong in implementation evidence after execution.
+- Do not list file paths in the REQ-ID definition. Add implementation evidence only when the plan explicitly requires it, and use an existing evidence field rather than appending paths beneath task rows.
 - Never renumber an existing REQ-ID later to make the list look cleaner.
 - The section heading (`N.M`) describes a logical area or capability, not a file name.
 

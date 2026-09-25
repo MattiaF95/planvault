@@ -55,7 +55,7 @@ Do not use raw REQ-ID count as the sole split criterion. A plan with 35 well-sco
 ```text
 spec.md    ← what and why: lifecycle state, objective, constraints, confirmed decisions, out-of-scope, exit criteria
 plan.md    ← how: architecture, phases, dependencies, commit order
-tasks.md   ← active and historical REQ-ID checklist with status and implementation evidence
+tasks.md   ← active and historical REQ-ID checklist with completion status
 ```
 
 These are the **three core plan files**. Optional supporting artifacts such as `review-audit-template.md` may exist alongside them.
@@ -120,12 +120,14 @@ Review the completed phase against the following checks:
 Fix confirmed findings and repeat the relevant verification before marking the phase COMPLETE.
 
 ## REQ-ID audit
-For every active REQ-ID in the phase, preserve the requirement text and attach implementation evidence:
+For every active REQ-ID in the phase, preserve its requirement text and update its existing status marker:
 
 - [x] REQ-N.M.n [original requirement text]
-  - Evidence: `path/to/file.ext:line-range`
 
-If any active REQ-ID is incomplete or lacks required evidence, the phase cannot be marked COMPLETE.
+Do not add evidence bullets or narrative beneath checklist rows. If the plan
+explicitly requires per-REQ evidence, update its existing evidence field
+concisely. If any active REQ-ID is incomplete or lacks evidence explicitly
+required by the plan, the phase cannot be marked COMPLETE.
 ```
 
 ## Finalise lifecycle state

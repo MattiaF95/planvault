@@ -7,6 +7,31 @@ description: Structured technical plan lifecycle management for long agentic cod
 
 You are the entry point for the planvault skill. Detect the current lifecycle state, load the relevant reference file, and follow it. Do not implement plan logic at router level.
 
+## Authorization before plan writes
+
+Check authorization before drafting a new plan or changing an existing one.
+
+- **New plan:** Write a plan only after the user explicitly asks to create,
+  draft, or write one. Discussing work, invoking PlanVault, or supplying a plan
+  as context does not by itself authorize drafting.
+- **Existing open plan:** Modify requirements only when the user explicitly
+  asks to update the plan or add/remove/change planned work. A request to
+  execute the existing open scope authorizes its normal status updates.
+- **Closed plan:** Treat a plan marked `PLAN_STATUS: COMPLETE`,
+  `COMPLETION_ALLOWED: YES`, or explicitly closed/archived as read-only. Before
+  reopening it, adding requirements, or changing its completion state, require
+  an explicit request to update, reopen, or resume that plan. A reference to the
+  plan, a generic request to use/execute it, or newly discovered work is not
+  authorization to change it.
+- An explicit authorization already given in the current conversation is
+  sufficient when it clearly covers the same plan and requested change; do not
+  ask again. Examples include “scrivi un piano”, “aggiorna questo piano”,
+  “aggiungi questa attività al piano”, or “riprendiamo questo piano con
+  PlanVault”.
+- If authorization is missing, ask before writing and wait for the answer. Do
+  not draft or update first and ask afterward. Read-only inspection and
+  reporting do not require plan-write authorization.
+
 ## Execution intent
 
 Treat any user instruction that clearly asks to execute, implement, apply, carry out, complete, run, or otherwise perform the work described by an existing plan as an execution request. The exact wording does not matter.
@@ -16,12 +41,16 @@ When such an instruction is received:
 - determine the requested scope from the instruction, using the full plan when no narrower scope is stated;
 - follow `references/plan-execute.md` and begin the execution loop after validation succeeds;
 - do not answer with validation or analysis only when execution is allowed.
+- If the plan is closed and the requested work would require reopening it or
+  adding requirements, stop before changing the plan and use the authorization
+  gate above.
 
 ## Lifecycle routing
 
 1. If no plan exists:
+   - First satisfy the authorization gate above.
    - Read `references/plan-draft.md`.
-   - Draft or incrementally build the plan from the current discussion.
+   - Draft or incrementally build the plan within the authorized scope.
 
 2. If a plan exists and the user asks to modify, correct, extend, or remove requirements:
    - Read `references/plan-update.md`.
@@ -87,7 +116,9 @@ Detect the plan shape before drafting, updating, or executing:
   triage requires the split, including when active REQ-IDs exceed the threshold
   or the plan domains/phases need separate context. `spec.md` is the entrypoint
   and the only authoritative lifecycle file; `plan.md` describes execution
-  strategy; `tasks.md` tracks REQ-IDs and evidence.
+  strategy; `tasks.md` tracks REQ-IDs and their completion status. Keep
+  implementation evidence concise and in an existing field only when the plan
+  requires it; do not add evidence prose beneath each task by default.
 
 When triage creates or validates the three-core-file structure, add explicit
 relative Markdown links between all three files. At minimum, `spec.md` must

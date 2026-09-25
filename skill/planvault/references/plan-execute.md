@@ -4,7 +4,7 @@
 
 1. Validate lifecycle state and plan structure before execution.
 2. Execute the requested phase, task, or full plan from its REQ-IDs.
-3. Preserve requirement text and update completion state with implementation evidence.
+3. Preserve requirement text and update each existing completion marker in place.
 4. Apply shared or phase-specific review checks when required.
 5. Stop and return to plan-update if current evidence invalidates a confirmed plan decision.
 
@@ -77,7 +77,7 @@ If `ANALYSIS` is `IN_PROGRESS`:
 - Stop execution.
 - Return to planning/update instead of guessing or reopening decisions during implementation.
 
-`ANALYSIS: COMPLETE` does not imply that all REQ-IDs are complete: open REQ-IDs are the work to execute and must remain tracked in `tasks.md` until implementation, verification, review, and evidence are complete.
+`ANALYSIS: COMPLETE` does not imply that all REQ-IDs are complete: open REQ-IDs are the work to execute and must remain tracked in `tasks.md` until implementation, verification, review, and any evidence required by the plan are complete.
 
 The lifecycle fields authorize execution only. They do not authorize a completion claim.
 
@@ -108,8 +108,10 @@ After lifecycle and structure validation succeed:
    item, and set `COMPLETION_ALLOWED: NO`.
 4. For each cursor item, implement it completely and run its required
    verification.
-5. At the REQ-ID checkpoint, append implementation and verification evidence,
-   update the status, `CURRENT_REQ`, and `NEXT_ACTION`, then advance the cursor.
+5. At the REQ-ID checkpoint, change the existing row to `[x]` only if the
+   requirement is fully implemented and its required verification passes;
+   otherwise leave it incomplete. Update `CURRENT_REQ` and `NEXT_ACTION`, then
+   advance the cursor.
 6. Continue with the next cursor item without rereading the entire plan.
 7. At each phase boundary, re-read the authoritative plan context before
    starting the next phase.
@@ -163,7 +165,7 @@ During execution:
 ### Implementation rules
 
 - Implement the requirement as written, including all files necessary to achieve the stated outcome.
-- Necessary dependencies are part of the REQ-ID — they do not require a new REQ-ID. Record them in the implementation evidence.
+- Necessary dependencies are part of the REQ-ID — they do not require a new REQ-ID. Do not add checklist rows to describe them; mention them only in an existing evidence field when the plan requires one.
 - Do not add unrelated improvements or changes not required by the current REQ-ID.
 - Do not silently implement requirements from future phases.
 - Preserve pre-existing observable behaviour unless the plan explicitly changes it.
@@ -173,39 +175,34 @@ During execution:
 | | Necessary dependency | Unrelated improvement |
 |---|---|---|
 | **Required for correctness?** | Yes — the REQ-ID outcome is wrong or incomplete without it | No — the REQ-ID works correctly without it |
-| **Action** | Implement inline; record in evidence | Do not implement; flag to user if genuinely useful |
+| **Action** | Implement inline; do not add a task or narrative row | Do not implement; flag to user if genuinely useful |
 | **Creates new REQ-ID?** | Never | Only if user explicitly adds it to the plan |
 
 Examples of necessary dependencies: a validation function needed by the feature being implemented; a config key required to enable the new behaviour; a type definition consumed by changed code. These are part of the REQ-ID, not additions to the plan.
 
 ---
 
-## Step 2 — Status and evidence update
+## Step 2 — Update status in place
 
-Never replace the original requirement description with only a path or line reference.
-
-Preserve the requirement and append evidence:
-
-```markdown
-- [x] REQ-N.M.n [original requirement text]
-  - Evidence: `path/to/primary.ext:line-range`
-```
-
-If multiple files materially implement the REQ-ID:
+For an executed REQ-ID, update its existing checklist row. Preserve the REQ-ID
+and requirement wording; change `[ ]` to `[x]` only after implementation and
+required verification succeed.
 
 ```markdown
 - [x] REQ-N.M.n [original requirement text]
-  - Evidence:
-    - `path/to/primary.ext:line-range`
-    - `path/to/secondary.ext:line-range`
 ```
 
-Rules:
-- Mark `[x]` only after implementation and required verification succeed.
-- Keep REQ-ID and requirement wording stable.
-- Record the files that materially implement the outcome. Do not enumerate every file touched by a minor dependency — use the narrowest verifiable reference that confirms the outcome.
-- When exact line numbers are unstable or unavailable, use the narrowest verifiable file/symbol/diff reference rather than inventing a line range.
-- Historical or removed REQ-IDs do not block phase completion if the plan clearly marks them inactive/removed.
+Do not append a duplicate task, subtask, implementation recap, or evidence
+bullet beneath the row. Do not add prose after the task list to narrate work.
+Update an evidence field only when the plan already defines one or explicitly
+requires per-REQ evidence, and keep it to a concise pointer or result. Otherwise
+leave evidence in the verification artifacts and summarize it briefly in the
+response to the user.
+
+Keep plan edits minimal: update existing REQ-ID and exit-criterion markers,
+standard execution-header fields, and lifecycle fields only when their state
+changes. Do not add tasks, subtasks, evidence rows, or execution summaries
+unless the user or the existing plan explicitly requires them.
 
 Use these execution states when the plan supports them:
 
@@ -247,7 +244,7 @@ After all active REQ-IDs in a phase are implemented:
 4. Apply phase-specific criteria in addition to the shared template when both are present and non-duplicative.
 5. If neither exists, perform only the verification required by the individual REQ-IDs and exit criteria.
 
-After the phase review and evidence update succeed, create one atomic,
+After the phase review and required plan-state updates succeed, create one atomic,
 phase-level Git commit when the repository uses Git. Do not advance to the
 next phase until the commit succeeds. If committing is blocked, preserve the
 implementation, report the exact blocker and resume action, and do not claim
@@ -272,10 +269,10 @@ If review discovers evidence that contradicts the plan itself:
 - Do not avoid reading current code merely because it was cited during planning.
 - Do not mark a phase COMPLETE while any active REQ-ID is incomplete, unverified, or its outcome is not confirmed.
 - Do not mark the full plan COMPLETE because one phase, scenario, test, or batch of REQ-IDs passed.
-- Do not report completion while any active REQ-ID or exit criterion is open, blocked, partial, skipped, planned, or missing evidence.
-- Do not erase the original REQ-ID description when recording completion evidence.
+- Do not report completion while any active REQ-ID or exit criterion is open, blocked, partial, skipped, planned, or missing evidence required by the plan.
+- Preserve the original REQ-ID and requirement text when updating its status.
 - Do not silently implement future-phase requirements.
-- Do not create new REQ-IDs for necessary dependencies discovered during execution — record them in evidence.
+- Do not create new REQ-IDs for necessary dependencies discovered during execution or add rows beneath existing REQ-IDs to describe them.
 - Do not create, modify, or delete `review-audit-template.md` during normal execution; structural ownership belongs to `plan-triage`.
 - Do not redesign the plan structure during execution; route structural changes back to triage/update.
 - Do not set `RETRIAGE: NO`; only `plan-triage` may clear that state.

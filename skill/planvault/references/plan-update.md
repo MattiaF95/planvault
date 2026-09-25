@@ -11,6 +11,12 @@
 7. Preserve and update the standard agent execution header so that all six
    required fields describe the new plan.
 
+Before modifying a plan marked `PLAN_STATUS: COMPLETE`,
+`COMPLETION_ALLOWED: YES`, or explicitly closed/archived, require an explicit
+user request to update, reopen, or resume that plan. A plan supplied only as
+context stays read-only. If prior authorization in the current conversation
+clearly covers the same plan and change, proceed without asking again.
+
 ## Lifecycle fields
 
 Every plan must expose:
@@ -51,7 +57,7 @@ If a real conflict is found:
 - **Removed requirements**: preserve the historical ID and mark the requirement as removed instead of deleting it silently.
 - **New requirements**: assign the next available ID within the relevant phase/section namespace.
 - **Completed requirement changes**: if a completed `[x]` requirement changes materially, reset it to `[ ]` and mark it as reopened while preserving its identity.
-- **Evidence preservation**: when reopening a completed requirement, retain previous evidence as historical evidence if useful, but do not present it as proof of the new requirement state.
+- **Evidence preservation**: when reopening a completed requirement, retain prior evidence only in an existing evidence field if useful; do not append historical prose beneath the checklist row or present old evidence as proof of the new state.
 - **Execution header**: after any update, keep the standard six-field header.
   Keep `PLAN_STATUS: OPEN` or
   `BLOCKED` while active work remains; reset `COMPLETION_ALLOWED: NO` whenever
@@ -62,7 +68,7 @@ If a real conflict is found:
 
 ## Dependencies discovered during execution
 
-When `plan-execute` reports a necessary dependency it handled inline, do not create a new REQ-ID for it. Record it in the affected REQ-ID's evidence. A necessary dependency is one required for the existing outcome to be correct — it does not expand scope.
+When `plan-execute` reports a necessary dependency it handled inline, do not create a new REQ-ID or add a descriptive row beneath the affected REQ-ID. A necessary dependency is one required for the existing outcome to be correct — it does not expand scope. Update an existing evidence field only when the plan requires one.
 
 Create a new REQ-ID only when ALL of the following are true:
 - The dependency introduces a verifiable outcome not previously in the plan.
@@ -136,4 +142,4 @@ RETRIAGE: REQUIRED
 - Do not renumber REQ-IDs after additions or removals (renumbering is only permitted during plan-triage consolidation).
 - Do not force a re-triage for small updates that leave the current structure valid.
 - Do not set `RETRIAGE: NO`; structural clearance belongs exclusively to `plan-triage`.
-- Do not create new REQ-IDs for necessary dependencies discovered during execution; record them in evidence and route to plan-triage only if scope genuinely expands.
+- Do not create new REQ-IDs or add descriptive checklist rows for necessary dependencies discovered during execution. Route to plan-triage only if scope genuinely expands.
