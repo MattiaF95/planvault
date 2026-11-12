@@ -49,6 +49,42 @@ belong in the execution and validation sections.
 - [ ] REQ-N.M.1 [short outcome label]: [what must be true after this is done — one verifiable outcome, any number of files]
 - [ ] REQ-N.M.2 [short outcome label]: [what must be true after this is done]
 
+## Agent strategy
+- User limit: [maximum simultaneously active subagents, excluding the coordinator;
+  source of the user's preference, or explicit sequential fallback]
+- Runtime capacity: [verified capacity or unknown; recheck at execution]
+- Per phase or independent batch: [REQ-IDs, dependencies, safe concurrent count,
+  file ownership, shared contracts/services/test resources, integration order]
+- Role proposals: [scope, proposed available model identifier, effort, rationale,
+  and any capability still to verify; or no subagents needed with reason]
+
+## Verification strategy
+- Per phase and for the overall objective: [unit, integration, functional
+  black-box, and other relevant checks selected or excluded with a brief reason]
+- For each selected check: [REQ-ID/outcome, scenario including relevant errors
+  and regressions, command/procedure, expected result, environment and evidence]
+- Evidence limits: [real, mock, provider/runtime dependencies, unavailable checks]
+
+## Documentation updates
+| Document path | Required change | Phase or closure | Verification |
+|---|---|---|---|
+| [exact path] | [content to align] | [checkpoint] | [consistency criterion] |
+
+If no documentation updates are needed, state that explicitly with a reason.
+Keep direct implementation documentation within its outcome's REQ-ID.
+
+## Closure and retention
+- Final action: [ARCHIVE or DELETE; propose ARCHIVE unless the user chooses DELETE]
+- Artifacts: [exact plan/core/support files; never an unspecified parent folder]
+- Destination: [existing archive directory in the repository where the plan was
+  created, confirmed by the user, plus exact target artifact paths; not applicable
+  for DELETE]
+- Retained evidence: [durable location outside files to delete, or archive contents]
+- References to update: [exact affected indexes/links, or none with reason]
+- Authorization: [user instruction covering this final action; pending if unresolved]
+- Finalization status: PENDING [allowed values: PENDING | DONE; initially PENDING]
+- Recovery: [how to resume a failed move/delete without reopening completed work]
+
 ## Commit order
 1. [phase-level commit message for phase 1]
 2. [phase-level commit message for phase 2]
@@ -57,9 +93,13 @@ Each phase must define one atomic commit outcome. The commit is created only
 after all REQ-IDs, verification, review, and evidence for that phase are
 complete.
 
-## Exit criteria
+## Exit criteria (required before closure)
 - [binary, measurable condition — not "it works"]
 - [observable proof that the overall objective was achieved]
+
+## Final delivery conditions (checked after closure)
+- Recorded retention action verified; Finalization status: DONE.
+- [any required finalization commit or reference/evidence checks]
 
 ## Execution instructions
 - The plan is the operational prompt and source of truth during execution.
@@ -78,9 +118,87 @@ complete.
 - Every phase must define an observable result that advances the objective and
   a verification that demonstrates that result. Final validation must also
   demonstrate the overall objective, not merely completed REQ-IDs.
+- After full verification and documentation audit, close the plan, then apply
+  and verify the recorded retention action. Final delivery requires completed
+  finalization; a failure leaves a closed plan with pending recovery.
 - For risky commands, migrations, or operations that may fail partially,
   document a safe retry or recovery action.
 ```
+
+## Planning decision rules
+
+### Agent strategy
+
+Ask for the user's maximum simultaneous subagents when it is not already known.
+Continue independent planning while waiting. If no answer is available, record
+zero subagents as a conservative sequential fallback, not as a user preference.
+Zero is a valid decision even when a higher limit is authorized.
+
+Compute the safe concurrency ceiling independently of runtime capacity and the
+user limit; distinguish that ceiling from the chosen worker count and the
+effective launch count. A runtime capacity of zero does not imply that no
+independent work could be delegated in another environment.
+
+For each phase/batch, derive safe parallelism from independent outcomes and
+non-conflicting ownership. Different files alone do not prove independence:
+shared contracts, generated outputs, databases, services, fixtures, and test
+resources can conflict. Record dependency barriers and integration order.
+
+Effective concurrency is the minimum of the user limit, runtime capacity, and
+safe independent work available now. Count all active subagents against that
+limit, including reviewers. The coordinator owns plan writes, integration, and
+Git operations; workers own only their assigned scope. Sequential execution
+remains valid when delegation is unavailable or not authorized.
+
+Propose a model and effort for each useful role with a task-specific reason.
+Use identifiers and effort levels supported by the current environment; if
+unverified, label them as proposals to verify before launch. Do not invent a
+fixed model catalogue or silently substitute an unavailable model. A simpler
+available configuration or sequential fallback must remain within user choices.
+
+### Verification, documentation, and retention
+
+Evaluate test categories, rather than requiring every category for every plan.
+Unit tests suit isolated logic; integration tests suit contracts between parts;
+functional black-box checks exercise observable behavior through public
+interfaces without depending on implementation internals. Select proportionate
+checks and explain exclusions. A mock or static check must not stand in for an
+unverified runtime/provider result.
+
+Inspect repository documentation and identify exact affected paths during
+initial drafting, including final cross-document consistency checks. Do not
+leave a generic "update docs later" task. New impacts discovered during execution
+must be recorded through plan-update within the authorized scope.
+
+Inspect retention conventions and existing archive directories in the repository
+where the plan was created. Resolve paths against that repository, never the
+skill installation or an unrelated working directory. There is no universal
+archive folder name or location.
+
+Propose ARCHIVE by default and record concrete artifact paths from the start.
+Ask the user to confirm the discovered archive directory unless their earlier
+instruction already clearly approves that exact destination. If none exists,
+ask where to archive; do not invent a folder name or create directories on your
+own. Creating a new archive directory, including a per-plan subdirectory inside an
+existing archive, requires explicit user authorization.
+While awaiting the answer, continue independent planning and keep the destination
+unresolved. Do not mark ANALYSIS: COMPLETE until the destination is resolved.
+
+DELETE requires the user's explicit choice. Record authorization for finalization;
+an explicit execution request covering a disclosed ARCHIVE action authorizes the
+local move only when the destination has also been confirmed. It does not imply
+a DELETE choice, a new directory, or external actions. If the action or destination
+is unresolved, keep ANALYSIS: IN_PROGRESS.
+
+The closure procedure must first close the verified plan, then apply its recorded
+retention action and verify the result. Include this procedure in the plan's
+execution instructions. Final delivery requires completed finalization; the
+retention action must not be a REQ-ID or exit criterion required before closure.
+Keep it under separate final delivery conditions to avoid a circular gate.
+Use exactly PENDING and DONE for Finalization status, not COMPLETE.
+For DELETE, preserve closure and verification evidence outside the artifacts
+before removing them. For ARCHIVE, keep all core/support files together and
+preserve internal links; update external references as specified.
 
 ## Lifecycle fields
 

@@ -11,6 +11,17 @@
 7. Preserve and update the standard agent execution header so that all six
    required fields describe the new plan.
 
+Changes to agent concurrency, model/effort proposals, verification coverage,
+documentation impacts, or retention must update their existing plan sections.
+Preserve unaffected decisions. Dependency/ownership changes that invalidate
+safe parallel batches require retriage; a lower runtime capacity within an
+already-recorded fallback does not. A new DELETE choice requires explicit user
+authorization. Keep ANALYSIS: IN_PROGRESS for unresolved material decisions.
+
+Applying a closed plan's already-authorized retention action and updating its
+existing finalization status is a narrow exception to the read-only rule below;
+it does not authorize reopening requirements or changing the retention policy.
+
 Before modifying a plan marked `PLAN_STATUS: COMPLETE`,
 `COMPLETION_ALLOWED: YES`, or explicitly closed/archived, require an explicit
 user request to update, reopen, or resume that plan. A plan supplied only as

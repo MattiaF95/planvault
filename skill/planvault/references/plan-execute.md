@@ -23,6 +23,10 @@ Do not convert an execution request into an analysis-only response.
 
 ## Step 0 — Lifecycle and structure validation
 
+Recovery exception: for a closed plan with pending, already-authorized
+finalization, read its closure/retention section and resume Step 4 directly.
+Do not run open-work validation or implementation again.
+
 Execution is allowed only when the authoritative lifecycle state is exactly:
 
 ```text
@@ -91,6 +95,20 @@ If the required structure is otherwise missing or malformed:
 - Route to `plan-triage` when the problem is structural.
 - Route to `plan-update` when the problem is semantic or caused by a changed requirement.
 
+### Planning decisions and runtime checks
+
+Require the agent strategy, verification strategy, documentation inventory, and
+closure/retention instructions defined by plan-draft and validated by triage.
+Route missing decisions to plan-update/triage; do not invent them during execution.
+Before delegation, recheck available slots, supported models/effort, authorization,
+and conflicts. Apply the minimum of user limit, runtime capacity, and safe ready
+work; count reviewers too. Use the recorded fallback if capacity is lower or
+models cannot be used; otherwise resolve the mismatch before launching workers.
+
+If a closed plan has PENDING finalization, resume Step 4 only when its recorded
+retention action is already authorized. Do not rerun implementation, reopen
+requirements, or require open REQ-IDs for this recovery path.
+
 ---
 
 ## Step 1 — Execution
@@ -104,10 +122,16 @@ After lifecycle and structure validation succeed:
    `plan.md`, and `tasks.md` together.
 2. Resolve the requested scope and create an in-memory ordered execution
    cursor containing the active incomplete REQ-IDs in that scope.
+   The cursor may group independent REQ-IDs into the plan's validated parallel
+   batches, respecting phase boundaries, dependencies, and integration order.
 3. Set the plan status to `IN_PROGRESS`, set `CURRENT_REQ` to the first open
    item, and set `COMPLETION_ALLOWED: NO`.
-4. For each cursor item, implement it completely and run its required
-   verification.
+4. For each cursor item or validated batch, implement each outcome completely
+   and run its required verification. Workers return changes and evidence to
+   the coordinator, who integrates and verifies the combined result before
+   marking affected REQ-IDs complete. Workers do not edit the plan or commit.
+   Keep CURRENT_REQ as a single coordinator-owned cursor item; the validated
+   strategy identifies batch membership, without adding custom header fields.
 5. At the REQ-ID checkpoint, change the existing row to `[x]` only if the
    requirement is fully implemented and its required verification passes;
    otherwise leave it incomplete. Update `CURRENT_REQ` and `NEXT_ACTION`, then
@@ -156,7 +180,7 @@ During execution:
 ### Scope
 
 - Execute one phase at a time unless the user explicitly requests multiple phases or the full plan.
-- Work through active REQ-IDs in plan order unless a documented dependency requires a different order.
+- Work through active REQ-IDs in plan order, using only validated independent batches or documented dependencies to change scheduling.
 - Implement one REQ-ID fully before marking it complete.
 - A REQ-ID covers one verifiable outcome and may touch any number of files. Implement all necessary files together as a single unit.
 - If a requirement is materially ambiguous and cannot be resolved from the plan or current repository state, ask one focused question rather than guessing.
@@ -224,6 +248,10 @@ ANALYSIS: COMPLETE
 RETRIAGE: NO
 ```
 
+Before closing the full plan, verify every planned documentation update and
+its cross-document consistency criteria. If new documentation impacts emerge,
+route them through plan-update rather than silently omitting them.
+
 The full plan is COMPLETE only when every active REQ-ID in every phase is `[x]`,
 every exit criterion is checked with evidence, no blocker or pending review
 remains, and the execution header says `PLAN_STATUS: COMPLETE` and
@@ -245,8 +273,8 @@ After all active REQ-IDs in a phase are implemented:
 5. If neither exists, perform only the verification required by the individual REQ-IDs and exit criteria.
 
 After the phase review and required plan-state updates succeed, create one atomic,
-phase-level Git commit when the repository uses Git. Do not advance to the
-next phase until the commit succeeds. If committing is blocked, preserve the
+phase-level Git commit when the repository uses Git and committing is authorized. When a phase commit is required, do not advance to the
+next phase until it succeeds. If committing is blocked, preserve the
 implementation, report the exact blocker and resume action, and do not claim
 final delivery.
 
@@ -258,6 +286,47 @@ If review discovers evidence that contradicts the plan itself:
 - Stop execution.
 - Return to `plan-update`.
 - Allow `plan-update` to set `ANALYSIS: IN_PROGRESS` and/or `RETRIAGE: REQUIRED` according to the impact of the finding.
+
+---
+
+## Step 4 — Close and finalize the full plan
+
+Run this step only after all active REQ-IDs, required documentation, reviews,
+and pre-closure exit criteria for the full plan are verified. Retention is a
+post-closure delivery condition, not a prerequisite for closing. Completing a requested subset
+never archives or deletes a plan with remaining work.
+
+1. Record closure in the authoritative plan: PLAN_STATUS: COMPLETE,
+   COMPLETION_ALLOWED: YES, CURRENT_REQ: none, and NEXT_ACTION describing the
+   recorded finalization action. Keep Finalization status: PENDING until the
+   retention action is verified. Closure and final delivery are distinct.
+2. Apply only the recorded, authorized action to the exact listed artifacts.
+   ARCHIVE: use the user-confirmed archive directory in the plan's repository.
+   If it is missing, ask before creating or substituting any directory unless
+   its creation was explicitly authorized already. This includes new per-plan
+   subdirectories inside an existing archive. Move core/support files
+   together to the declared destination, do not
+   overwrite an existing archive, preserve links between plan files, rebase
+   relative links to repository files as needed, and update recorded external
+   references. DELETE: require the recorded explicit user choice and
+   preserve a closure/verification record at the declared durable location
+   before removing any listed artifact. Do not remove unrelated directory contents.
+3. Verify the original artifacts are absent from the active location and that
+   archive contents, retained evidence, and updated references are correct.
+   For ARCHIVE, set Finalization status: DONE and NEXT_ACTION: none in the
+   archived authoritative file. For DELETE, record DONE in the retained closure
+   record. This administrative update is allowed without reopening the plan.
+4. If finalization fails, preserve COMPLETE for verified implementation and
+   PENDING for finalization, recording the error and exact recovery action in
+   the surviving authoritative plan or retained closure record. Resume only
+   missing finalization steps; never overwrite an archive or repeat deletion
+   blindly. Report final delivery as pending until verification succeeds.
+
+Integrate finalization with the last phase commit when authorized; if that
+commit was already created, use a separate scoped finalization commit under the
+same Git authorization. Repository/user permission rules still govern commits.
+Do not claim delivery while required finalization or its required commit remains
+pending. Report the archive or retained closure-record location in the final response.
 
 ---
 
@@ -273,6 +342,6 @@ If review discovers evidence that contradicts the plan itself:
 - Preserve the original REQ-ID and requirement text when updating its status.
 - Do not silently implement future-phase requirements.
 - Do not create new REQ-IDs for necessary dependencies discovered during execution or add rows beneath existing REQ-IDs to describe them.
-- Do not create, modify, or delete `review-audit-template.md` during normal execution; structural ownership belongs to `plan-triage`.
+- Do not create, modify, or delete `review-audit-template.md` during implementation; structural ownership belongs to `plan-triage`. Step 4 may move/delete a listed support file as part of authorized finalization.
 - Do not redesign the plan structure during execution; route structural changes back to triage/update.
 - Do not set `RETRIAGE: NO`; only `plan-triage` may clear that state.

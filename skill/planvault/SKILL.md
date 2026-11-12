@@ -7,6 +7,34 @@ description: Structured technical plan lifecycle management for long agentic cod
 
 You are the entry point for the planvault skill. Detect the current lifecycle state, load the relevant reference file, and follow it. Do not implement plan logic at router level.
 
+## When a plan is needed
+
+PlanVault manages plans; it does not require a plan for every task.
+
+- Handle small, self-contained requests directly when the user has not asked
+  for a plan and the work is not part of an existing plan's requested scope.
+  Examples include a focused text edit, a lookup, or a small isolated fix.
+- The absence of a plan is not a reason to create one, ask for permission to
+  create one, or block otherwise authorized work. Task complexity alone does
+  not authorize drafting a plan.
+- Apply the lifecycle rules below when the user requests plan work or execution
+  of an existing plan. Their execution gates apply to that planned scope, not
+  to unrelated tasks merely because this skill is loaded.
+
+## Required planning decisions
+
+When writing a plan, define the agent strategy (user concurrency limit, safe
+parallel work, proposed models and effort), verification strategy, exact
+documentation updates, and final ARCHIVE or DELETE action with concrete paths.
+Use `references/plan-draft.md` for these decisions, `plan-triage.md` to validate
+them, `plan-update.md` when they change, and `plan-execute.md` to apply them.
+These decisions belong in the plan from the start; do not defer them to closure.
+Find the archive in the plan's repository and confirm its existing directory
+with the user unless already approved; never create a new archive directory
+without explicit authorization.
+They do not create permission to delegate or perform external actions beyond
+the user's authorization and the environment's rules.
+
 ## Authorization before plan writes
 
 Check authorization before drafting a new plan or changing an existing one.
@@ -22,7 +50,10 @@ Check authorization before drafting a new plan or changing an existing one.
   reopening it, adding requirements, or changing its completion state, require
   an explicit request to update, reopen, or resume that plan. A reference to the
   plan, a generic request to use/execute it, or newly discovered work is not
-  authorization to change it.
+  authorization to change it. The sole closure exception is applying the
+  plan's already-authorized finalization action exactly as recorded (including
+  its existing finalization status); this does not reopen requirements. A
+  closed plan with pending finalization may resume that action only.
 - An explicit authorization already given in the current conversation is
   sufficient when it clearly covers the same plan and requested change; do not
   ask again. Examples include “scrivi un piano”, “aggiorna questo piano”,
@@ -47,7 +78,11 @@ When such an instruction is received:
 
 ## Lifecycle routing
 
-1. If no plan exists:
+Before routing open work, if a closed plan has pending finalization and the
+user asks to finish/resume its already-authorized retention action, read
+`references/plan-execute.md` and resume Step 4 only. Do not reopen the plan.
+
+1. If no plan exists and the user explicitly asks to create, draft, or write one:
    - First satisfy the authorization gate above.
    - Read `references/plan-draft.md`.
    - Draft or incrementally build the plan within the authorized scope.

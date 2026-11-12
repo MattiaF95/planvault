@@ -130,6 +130,40 @@ concisely. If any active REQ-ID is incomplete or lacks evidence explicitly
 required by the plan, the phase cannot be marked COMPLETE.
 ```
 
+## Validate planning decisions
+
+Before declaring the structure ready, verify that the plan contains:
+- An agent strategy with the user concurrency limit or explicit zero-subagent
+  fallback, per-phase safe parallelism, dependency barriers, ownership, and
+  justified model/effort proposals (or a justified no-subagent decision).
+  Check that the safe concurrency ceiling is derived independently of runtime
+  capacity and is distinct from the chosen/effective worker count; a zero
+  runtime fallback alone is not evidence for a zero safe ceiling.
+- A verification strategy evaluating relevant test categories and recording
+  concrete checks, expected observations, environment needs, evidence limits,
+  and reasons for exclusions, including an overall-objective proof.
+- Exact documentation paths, changes, timing, and verification; or a justified
+  statement that no updates are required.
+- Closure and retention with ARCHIVE/DELETE, exact artifact/destination paths,
+  evidence preservation, affected references, authorization, PENDING status,
+  recovery, and instructions to close then finalize. Verify that retention is
+  a post-closure delivery condition, never a prerequisite exit criterion or
+  REQ-ID for closure, and that finalization uses only PENDING | DONE.
+
+Verify the archive belongs to the plan's repository and its existing directory
+is user-confirmed; a new directory needs explicit creation authorization. A
+repository convention alone does not replace destination confirmation.
+
+Do not invent missing user decisions during triage. Route semantic gaps to
+plan-update/draft and keep execution not ready until resolved. Runtime capacity
+and model availability may remain explicitly unverified until execution; this
+must have a safe recorded fallback and must not be represented as proven.
+
+For a three-core-file plan, keep agent/verification strategy in `plan.md` and
+closure/retention in `spec.md`; keep the documentation table in one of those
+files and link to it. Preserve these decisions and repair relative paths when
+splitting a single-file plan. Do not duplicate authoritative sections.
+
 ## Finalise lifecycle state
 
 After consolidation, structure, and review-pattern validation succeed:

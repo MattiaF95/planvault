@@ -40,8 +40,44 @@ drafts, reviews, updates, and executes a structured technical plan.
 ## Plan lifecycle
 
 ```text
-draft → triage → update when needed → execute → verify
+draft → triage → update when needed → execute → verify → close → archive/delete
 ```
+
+### Planning decisions
+
+PlanVault does not require a plan for small, self-contained tasks. A new plan
+is written only on an explicit user request.
+
+From its first draft, each plan defines:
+
+- The user's subagent limit, safe parallel work per phase, and justified model
+  and effort proposals, including a sequential fallback.
+- A verification strategy selecting unit, integration, functional black-box,
+  and other relevant checks, with reasons for exclusions.
+- Exact documentation updates and their verification, plus the final ARCHIVE
+  or explicitly chosen DELETE action, artifact paths, evidence, and recovery.
+
+The archive name and location belong to the repository where the plan was
+created. An existing archive destination must be confirmed unless already
+approved. If no archive exists, the agent asks where to archive and keeps the
+destination unresolved. It never creates a new archive directory, including a
+per-plan subdirectory, without explicit authorization.
+
+The user limit counts simultaneously active subagents, including reviewers,
+and excludes the coordinator. Safe concurrency is assessed separately from
+runtime capacity, using dependencies, file ownership, shared contracts, and
+test resources. Effective concurrency is the minimum of the user limit,
+runtime capacity, and currently safe independent work. The coordinator owns
+plan updates, integration, and commits; workers return changes and evidence.
+Model and effort proposals are checked against actual availability before launch.
+
+Test categories are evaluated rather than required indiscriminately. Each
+selected check records its scenario, command or procedure, expected result,
+environment, and evidence limits. Excluded categories have a brief rationale.
+
+Documentation is identified during drafting by exact path, required change,
+checkpoint, and verification criterion. If no updates are needed, the plan
+states why; final verification checks the recorded documents for consistency.
 
 ### Draft
 
@@ -118,7 +154,8 @@ execution must begin.
 
 The execution loop is bounded. The agent reads the plan once at the start of an
 execution session and creates an in-memory ordered cursor for the selected
-REQ-IDs. It does not reread or rewrite the full plan between every task.
+REQ-IDs, allowing validated batches of independent work within phase boundaries.
+It does not reread or rewrite the full plan between every task.
 
 The plan is updated at meaningful checkpoints: after a REQ-ID is completed or
 blocked, when the execution cursor advances, and at the final scope audit. The
@@ -180,16 +217,34 @@ The plan can be marked complete only when:
 Passing one phase, scenario, test, or group of tasks does not complete the
 whole plan.
 
+A verified plan is first closed, then archived or deleted according to its
+recorded, authorized retention action. The plan keeps pre-closure exit criteria
+separate from post-closure delivery conditions: cleanup is never a requirement
+that must pass before the plan can close.
+
+Finalization uses `PENDING | DONE`. Final delivery requires verified cleanup;
+marking the plan COMPLETE alone is insufficient. Archiving moves only the
+listed artifacts to the confirmed destination, preserves links, updates affected
+references, and never overwrites an existing archive. Deletion requires an
+explicit user choice and a durable closure/evidence record outside the deleted
+artifacts. Completing only part of a plan never triggers full-plan cleanup.
+
+Failed finalization leaves verified implementation COMPLETE and finalization
+PENDING, with an error and recovery action. The already-authorized cleanup can
+resume without reopening requirements or repeating implementation.
+
 ## Evidence
 
-The original requirement text must remain in the plan. Evidence is appended to
-it:
+The original requirement text must remain in the plan. Update its existing
+status marker only after the outcome and required verification pass:
 
 ```markdown
-- [x] REQ-2.1.1 Token validation: reject expired tokens.
-  - Evidence: `src/auth/token.ts:44-57`
-  - Verification: `tests/auth/token.test.ts`
+- [x] REQ-3.1 Syntax update: support and document the new syntax.
 ```
+
+Keep evidence in verification artifacts and summarize it in the delivery
+response. If the plan explicitly defines an evidence field, update that field
+concisely; do not append duplicate tasks or evidence prose beneath every row.
 
 A changed file alone is not proof. Evidence must show that the requested
 outcome was implemented and verified.
